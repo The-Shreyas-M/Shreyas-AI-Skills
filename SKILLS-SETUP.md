@@ -12,6 +12,7 @@ npx skills add https://github.com/jeffallan/claude-skills --skill embedded-syste
 npx skills add https://github.com/microsoft/playwright-cli --skill playwright-cli
 npx skills add https://github.com/OthmanAdi/planning-with-files --skill planning-with-files
 npx skills add https://github.com/nextlevelbuilder/ui-ux-pro-max-skill --skill ui-ux-pro-max
+npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill gitcp
 ```
 
 Requires Node.js ≥ 18 (`npx`). Verify with `npx skills list`.
@@ -27,3 +28,4 @@ Requires Node.js ≥ 18 (`npx`). Verify with `npx skills list`.
 - **playwright-cli** — browser automation and Playwright testing
 - **planning-with-files** — file-based planning for multi-step agent work
 - **ui-ux-pro-max** — UI/UX design intelligence: palettes, fonts, guidelines
+- **gitcp** — commit/push with multi-account GitHub identity selection
