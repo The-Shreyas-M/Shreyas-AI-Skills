@@ -19,6 +19,7 @@ Or install the skills I use daily (see `SKILLS-SETUP.md` for the full list and w
 npx skills add https://github.com/anthropics/skills --skill frontend-design
 npx skills add https://github.com/browser-use/browser-use --skill browser-use
 npx skills add https://github.com/microsoft/playwright-cli --skill playwright-cli
+npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill gitcp
 ```
 
 Requires Node.js ≥ 18. Verify with `npx skills list`.
