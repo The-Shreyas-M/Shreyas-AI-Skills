@@ -23,7 +23,7 @@ Repos live under each account on GitHub. The remote must point at the account ch
 1. **Ask which account to use** with the `question` tool. Options are the accounts from the table (e.g. account `1` and account `2`). Default to account `1` if there is exactly one obvious owner for the current repo.
 
 2. **Switch the active gh account** so git-credential resolves tokens for the right user:
-   - `gh auth switch --account <chosen gh login>`
+   - `gh auth switch --user <chosen gh login>`
    - Verify with `gh auth status` that the intended account shows `Active account: true`.
 
 3. **Set the repo-local git identity** to match the chosen account (do NOT change global config):
