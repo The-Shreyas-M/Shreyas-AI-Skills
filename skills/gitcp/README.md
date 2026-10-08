@@ -4,11 +4,11 @@ A skill for CLI coding agents that makes committing and pushing safe when you ha
 
 ## What it does
 
-1. Asks which GitHub account to use (e.g. account `1` or `2`).
-2. Switches the active account with `gh auth switch --user <login>` (uses GitHub CLI as the git credential helper, so this controls which token git uses).
-3. Sets repo-local `user.name` / `user.email` to the chosen account — never touches global config.
-4. Verifies `git remote -v` targets the chosen account's repo; if not, asks for the correct remote URL rather than guessing.
-5. Commits (after inspecting `git status`/`git diff`) and pushes the current branch.
+1. Works out which account owns the repo: remembered `gitcp.account` setting, then the remote's owner; asks only if neither tells it.
+2. Sets repo-local `user.name` / `user.email` (never global config) and remembers the account for next time.
+3. Pushes using that account's token per command (`GH_TOKEN=$(gh auth token --user X)`), so the globally active `gh` account never changes.
+4. Checks you have write access to the remote, refuses to push to the other account's repo, and can create a new repo under the right account (private by default).
+5. Commits specific files after inspecting `git status`/`git diff`, then pushes.
 
 Safeguards: no amend unless asked, no force-push, no blind `git add -A`, no committing secrets.
 
@@ -38,16 +38,7 @@ Verify: `npx skills list`.
 
 ## Configure your accounts
 
-After installing, open `SKILL.md` and fill in the accounts table with each account's `gh` login and noreply email:
-
-```markdown
-| Key  | gh account             | git user.email                                  |
-|------|------------------------|-------------------------------------------------|
-| `1`  | __ACCOUNT_1_LOGIN__    | __ACCOUNT_1_EMAIL__ (use the `+ID@users.noreply.github.com` form) |
-| `2`  | __ACCOUNT_2_LOGIN__    | __ACCOUNT_2_EMAIL__ (use the `+ID@users.noreply.github.com` form) |
-```
-
-Then restart your agent so it reloads the skill.
+Edit the accounts table at the top of `SKILL.md` with each account's `gh` login, name and `ID+login@users.noreply.github.com` email (find the ID with `gh api users/<login> --jq .id`). Restart your agent afterwards.
 
 ## Prerequisite: both accounts authenticated in GitHub CLI
 
@@ -59,4 +50,4 @@ gh auth switch --user <other-login>                        # switch
 gh auth login --hostname github.com --git-protocol https  # second account
 ```
 
-Confirm both are set up with `gh auth status`. The skill switches between them on demand.
+Confirm both are set up with `gh auth status`. The skill picks between them per command.

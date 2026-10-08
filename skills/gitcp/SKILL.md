@@ -1,44 +1,93 @@
 ---
 name: gitcp
-description: Commit and push with multi-account GitHub identity selection. Use when the user asks to commit and/or push and has multiple GitHub accounts — asks which account to use, switches gh auth + git identity to that account, verifies the remote, then commits and pushes to the correct repo.
+description: Commit and/or push with the correct GitHub account when the user has two accounts (personal + college). Use whenever the user asks to commit, push, "gitcp", publish a project to GitHub, or create a new GitHub repo. Detects the right account from the repo (remembered setting, remote owner), asks only when unsure, and pushes with that account's token without changing the globally active gh account.
 ---
 
-# Commit & push with account switching
+# gitcp: commit & push to the right GitHub account
 
-The user has multiple GitHub accounts and the git credential helper is GitHub CLI (`gh auth git-credential`), so which account is used is controlled by `gh auth switch`. Use this skill whenever committing or pushing on the user's behalf so the right identity is used for the right repo.
+The user has two GitHub accounts on this machine. Each project must be pushed by the account that owns it. Git uses `gh auth git-credential` as its credential helper, which honours the `GH_TOKEN` env var, so we pick the account **per command** instead of flipping global state with `gh auth switch`.
 
-## Configure your accounts
+## Accounts
 
-Fill in the accounts table below with each GitHub account's `gh` login and its noreply email. Keep this table in every copy of the skill (repo + installed).
+| Key | Label    | gh login                 | user.name                | user.email                                         |
+|-----|----------|--------------------------|--------------------------|----------------------------------------------------|
+| `p` | personal | `The-Shreyas-M`          | `The-Shreyas-M`          | `179123411+The-Shreyas-M@users.noreply.github.com` |
+| `c` | college  | `The-Shreyas-M-College`  | `The-Shreyas-M-College`  | `308621427+The-Shreyas-M-College@users.noreply.github.com` |
 
-| Key  | gh account             | git user.email                                  |
-|------|------------------------|-------------------------------------------------|
-| `1`  | __ACCOUNT_1_LOGIN__    | __ACCOUNT_1_EMAIL__ (use the `+ID@users.noreply.github.com` form) |
-| `2`  | __ACCOUNT_2_LOGIN__    | __ACCOUNT_2_EMAIL__ (use the `+ID@users.noreply.github.com` form) |
+Token for an account: `gh auth token --user <login>`. If that fails, the account is not logged in: tell the user to run `gh auth login` and stop.
 
-Repos live under each account on GitHub. The remote must point at the account chosen; never push to a repo owned by a different account under the wrong identity.
+The global git identity is the college account, so **never rely on global `user.*`**; always set the repo-local identity.
 
-## Steps (in order)
+## Step 1: Resolve the account (stop at the first rule that matches)
 
-1. **Ask which account to use** with the `question` tool. Options are the accounts from the table (e.g. account `1` and account `2`). Default to account `1` if there is exactly one obvious owner for the current repo.
+1. **Remembered:** `git config --local --get gitcp.account` returns a login in the table.
+2. **Remote owner:** parse the owner from `git remote get-url origin` (`github.com/<owner>/<repo>`). If the owner equals an account's login, use that account.
+3. **Otherwise ask** (use AskUserQuestion): options `personal (The-Shreyas-M)` and `college (The-Shreyas-M-College)`. Say what you saw (no remote, remote owned by someone else, etc.).
 
-2. **Switch the active gh account** so git-credential resolves tokens for the right user:
-   - `gh auth switch --user <chosen gh login>`
-   - Verify with `gh auth status` that the intended account shows `Active account: true`.
+If rule 2 gives an account that differs from rule 1, the remembered value is stale: tell the user and ask which is right.
 
-3. **Set the repo-local git identity** to match the chosen account (do NOT change global config):
-   - `git config user.name <gh login>`
-   - `git config user.email <email from table>`
+Whenever you resolve the account, state it in one line before acting: `Using college (The-Shreyas-M-College) because origin is github.com/The-Shreyas-M-College/foo`.
 
-4. **Verify the remote targets the chosen account's repo.** Show `git remote -v`. If `origin` points at a repo not owned by the chosen account, ask the user for the correct remote URL for the chosen account before pushing. If unsure, stop and ask — never guess the repo URL.
+## Step 2: Configure the repo (local only)
 
-5. **Commit** (only if the user asked to commit):
-   - Inspect `git status` and `git diff` first; stage only intended files.
-   - Commit message: use the user-provided message, or write a concise one matching the repo's recent style.
-   - Never commit secrets; never `git add -A` blindly.
+```bash
+git config --local user.name  "<user.name>"
+git config --local user.email "<user.email>"
+git config --local gitcp.account "<gh login>"
+```
 
-6. **Push** (only if the user asked to push):
-   - Push the current branch to the verified remote, e.g. `git push origin HEAD`.
-   - Confirm success with `git status` / remote ref output.
+Never touch `--global` config and never run `gh auth switch`.
 
-Conventions: never amend unless asked, never force-push, never touch global git config. After pushing, report the account used, the branch, and the short commit hash to the user.
+## Step 3: Verify access before doing anything
+
+```bash
+export GH_TOKEN="$(gh auth token --user <login>)"
+gh api user --jq .login          # must print <login>
+```
+
+If a remote exists, confirm the account can write to it:
+
+```bash
+gh repo view <owner>/<repo> --json viewerPermission --jq .viewerPermission   # WRITE, MAINTAIN or ADMIN
+```
+
+- Remote owned by the **other** account: do not push. Ask whether to switch to that account or repoint the remote.
+- Remote owned by neither (org or fork) and permission is not write-level: stop and report.
+- No remote: go to **New repo** below.
+
+(Windows PowerShell: `$env:GH_TOKEN = (gh auth token --user <login>)`, and `Remove-Item Env:GH_TOKEN` when done. In Bash, scope it per command, e.g. `GH_TOKEN=$(gh auth token --user X) git push`, rather than exporting for the whole session.)
+
+## Step 4: Commit (only if asked, or if there are changes and the user said "commit")
+
+1. `git status` and `git diff` (staged and unstaged). Recent style: `git log --oneline -5`.
+2. Stage specific files. No blind `git add -A`. Skip `.env`, keys, tokens, credentials, large binaries; warn if they are present and ask.
+3. Commit with the user's message, or a concise one matching the repo style. Follow any attribution rule from the session.
+4. If a pre-commit hook fails, fix the cause and make a **new** commit. Never `--no-verify`, never amend unless asked.
+
+## Step 5: Push (only if asked)
+
+```bash
+GH_TOKEN=$(gh auth token --user <login>) git push -u origin HEAD
+```
+
+Never force-push. If rejected as non-fast-forward, report it and ask (pull/rebase vs stop). Afterwards run `git status -sb` to confirm.
+
+## New repo (no remote yet)
+
+Ask for: repo name (default: folder name) and visibility (default **private**). Then:
+
+```bash
+GH_TOKEN=$(gh auth token --user <login>) gh repo create <login>/<name> --private --source=. --remote=origin
+```
+
+Commit first if there are no commits yet, then push with Step 5. Confirm before creating anything on GitHub; creating a public repo needs an explicit yes.
+
+## Report
+
+End with: account used (label + login), repo URL, branch, short commit hash, and anything skipped. If the account was newly remembered for this repo, say so.
+
+## Quick reference
+
+- Inspect: `gh auth status`, `git config --local --get gitcp.account`
+- Change a repo's account: `git config --local gitcp.account <login>` then redo Step 2
+- Rotate/refresh a token: `gh auth refresh --user <login>`
