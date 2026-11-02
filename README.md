@@ -22,6 +22,13 @@ npx skills add https://github.com/microsoft/playwright-cli --skill playwright-cl
 npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill gitcp
 ```
 
+My own skills in this repo:
+
+| Skill | What |
+|---|---|
+| `gitcp` | commit and push with the right GitHub account (personal vs college) |
+| `scrollytelling-portfolio-builder` | plan and build a scrollytelling life-portfolio site end to end: bible, Gemini prompt system, cut-out pipeline, data-driven stage, deploy, SEO, phone layouts with a screen-size test harness, docs and logbook (`npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill scrollytelling-portfolio-builder`) |
+
 Requires Node.js ≥ 18. Verify with `npx skills list`.
 
 ## Repo layout
