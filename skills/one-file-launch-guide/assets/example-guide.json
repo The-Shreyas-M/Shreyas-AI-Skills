@@ -1,0 +1,25 @@
+{
+  "out": "START-HERE.html",
+  "title": "Start here",
+  "page_title": "START HERE: launch checklist",
+  "brand": "Your Brand",
+  "accent": "#ffd400",
+  "logo": null,
+  "intro": "<p>Do the steps in order. Tick each box when done (it remembers). Every <b>yellow</b> button downloads, every <b>green</b> button copies. After you publish, paste your real link in the top box and press <b>Sync</b>: every text updates.</p>",
+  "variables": {
+    "LINK": {"label": "Your product link", "default": "https://yourname.gumroad.com/l/your-product"},
+    "SITE": {"label": "Your site link", "default": "https://example.com"}
+  },
+  "steps": [
+    {"id": "s1", "title": "Make the product page", "minutes": 10, "blocks": [
+      {"type": "html", "html": "<ol><li>Gumroad -> Products -> <b>New product</b> -> <b>Digital product</b>, price <b>29</b>.</li><li>Paste the name and description below. Upload the covers.</li></ol>"},
+      {"type": "copy", "caption": "Name", "label": "Copy name", "text": "My Product: The Short Promise"},
+      {"type": "copy", "caption": "Description", "label": "Copy description", "text": "What it is, who it is for, what is inside.\n\nGet it here: {LINK}"},
+      {"type": "download", "items": [{"label": "Cover 1", "file": "images/cover-1.jpg", "name": "Cover1.jpg"}]}
+    ]},
+    {"id": "s2", "title": "Upload the video", "minutes": 5, "blocks": [
+      {"type": "copy", "caption": "Description (links fill in by themselves)", "label": "Copy", "text": "Watch the site: {SITE}\nGet the guide: {LINK}"},
+      {"type": "note", "text": "Audience: not made for kids. Publish, then pin a comment with the link."}
+    ]}
+  ]
+}

@@ -28,6 +28,8 @@ My own skills in this repo:
 |---|---|
 | `gitcp` | commit and push with the right GitHub account (personal vs college) |
 | `scrollytelling-portfolio-builder` | plan and build a scrollytelling life-portfolio site end to end: bible, Gemini prompt system, cut-out pipeline, data-driven stage, deploy, SEO, phone layouts with a screen-size test harness, docs and logbook (`npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill scrollytelling-portfolio-builder`) |
+| `shorts-from-main-video` | turn a talking-head main video into vertical Shorts (b-roll on top, face below, word-by-word captions, hook title, 1.1x speed, ducked free phonk music); includes a filming guide, transcript and render scripts, and a dependency checker (`npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill shorts-from-main-video`) |
+| `one-file-launch-guide` | build one offline HTML launch guide (numbered steps, tick boxes, copy and download buttons, link sync) for Gumroad + YouTube + Shorts + posts, plus the single buyer file design (`npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill one-file-launch-guide`) |
 
 Requires Node.js ≥ 18. Verify with `npx skills list`.
 

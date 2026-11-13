@@ -1,0 +1,20 @@
+{
+  "source": "main-video.mp4",
+  "transcript": "work/tr.json",
+  "out": "shorts/short-1.mp4",
+  "speed": 1.1,
+  "face_crop": null,
+  "music": "music/calm-phonk.mp3",
+  "music_start": 12,
+  "music_volume": 0.55,
+  "fix_words": {"Shreyaas": "Shreyas"},
+  "parts": [
+    {"lines": [0, 1], "broll": "broll/screen-scroll.mp4", "broll_start": 0.5},
+    {"lines": [5, 6, 7], "broll": "broll/feature-clip.mp4", "broll_start": 0.6},
+    {"lines": [12], "broll": "broll/cover.jpg"}
+  ],
+  "titles": [
+    {"part": 0, "t0": 0.1, "t1": 2.8, "text": "MY WHOLE LIFE =|A WEBSITE"},
+    {"part": 2, "t0": 0.2, "t1": 2.0, "text": "BUILT IN 14 DAYS"}
+  ]
+}
