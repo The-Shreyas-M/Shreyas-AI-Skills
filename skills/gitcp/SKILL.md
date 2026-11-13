@@ -1,6 +1,6 @@
 ---
 name: gitcp
-description: Commit and/or push with the correct GitHub account when the user has two accounts (personal + college). Use whenever the user asks to commit, push, "gitcp", publish a project to GitHub, or create a new GitHub repo. Detects the right account from the repo (remembered setting, remote owner), asks only when unsure, and pushes with that account's token without changing the globally active gh account.
+description: Commit and/or push with the correct GitHub account when the user has two accounts (personal + college). Use whenever the user asks to commit, push, "gitcp", publish a project to GitHub, or create a new GitHub repo. Asks which account the first time in a project and records it in .gitcp.md, then reuses it; pushes with that account's token without changing the globally active gh account.
 ---
 
 # gitcp: commit & push to the right GitHub account
@@ -18,22 +18,30 @@ Token for an account: `gh auth token --user <login>`. If that fails, the account
 
 The global git identity is the college account, so **never rely on global `user.*`**; always set the repo-local identity.
 
-## Step 1: Resolve the account (stop at the first rule that matches)
+## Step 1: Resolve the account via `.gitcp.md` (project root)
 
-1. **Remembered:** `git config --local --get gitcp.account` returns a login in the table.
-2. **Remote owner:** parse the owner from `git remote get-url origin` (`github.com/<owner>/<repo>`). If the owner equals an account's login, use that account.
-3. **Otherwise ask** (use AskUserQuestion): options `personal (The-Shreyas-M)` and `college (The-Shreyas-M-College)`. Say what you saw (no remote, remote owned by someone else, etc.).
+Each project keeps its confirmed account in `.gitcp.md` at the repo root (`git rev-parse --show-toplevel`). Format:
 
-If rule 2 gives an account that differs from rule 1, the remembered value is stale: tell the user and ask which is right.
+```markdown
+# gitcp
+account: The-Shreyas-M
+confirmed: 2026-10-08
+```
 
-Whenever you resolve the account, state it in one line before acting: `Using college (The-Shreyas-M-College) because origin is github.com/The-Shreyas-M-College/foo`.
+1. **File exists:** read `account:`. It must be a login from the table, else treat the file as invalid and go to 2.
+   - Sanity check: if `origin`'s owner is the *other* account, the file may be wrong. Show the mismatch and ask which is right before doing anything. If the user picks differently, update the file.
+2. **File missing (or invalid): always ask once**, even if the remote owner looks obvious. Use AskUserQuestion with options `personal (The-Shreyas-M)` and `college (The-Shreyas-M-College)`. Say what you saw (remote owner, no remote, etc.) and mark the matching account "(Recommended)" when the remote owner is one of them.
+3. **Write `.gitcp.md`** with the chosen login and today's date, and tell the user it was created. Keep it out of commits: append `.gitcp.md` to `.git/info/exclude` if not already there (local only; never stage it unless the user asks).
+
+Never skip the ask on first use in a project. Once the file exists, don't ask again.
+
+Before acting, state it in one line: `Using college (The-Shreyas-M-College) from .gitcp.md`.
 
 ## Step 2: Configure the repo (local only)
 
 ```bash
 git config --local user.name  "<user.name>"
 git config --local user.email "<user.email>"
-git config --local gitcp.account "<gh login>"
 ```
 
 Never touch `--global` config and never run `gh auth switch`.
@@ -84,10 +92,10 @@ Commit first if there are no commits yet, then push with Step 5. Confirm before 
 
 ## Report
 
-End with: account used (label + login), repo URL, branch, short commit hash, and anything skipped. If the account was newly remembered for this repo, say so.
+End with: account used (label + login), repo URL, branch, short commit hash, and anything skipped. If `.gitcp.md` was newly created, say so.
 
 ## Quick reference
 
-- Inspect: `gh auth status`, `git config --local --get gitcp.account`
-- Change a repo's account: `git config --local gitcp.account <login>` then redo Step 2
+- Inspect: `gh auth status`, `cat .gitcp.md`
+- Change a repo's account: edit `account:` in `.gitcp.md`, then redo Step 2
 - Rotate/refresh a token: `gh auth refresh --user <login>`

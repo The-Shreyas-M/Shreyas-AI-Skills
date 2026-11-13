@@ -4,8 +4,8 @@ A skill for CLI coding agents that makes committing and pushing safe when you ha
 
 ## What it does
 
-1. Works out which account owns the repo: remembered `gitcp.account` setting, then the remote's owner; asks only if neither tells it.
-2. Sets repo-local `user.name` / `user.email` (never global config) and remembers the account for next time.
+1. First time in a project it asks which account to use (suggesting the remote's owner) and records the answer in `.gitcp.md` (kept out of commits via `.git/info/exclude`). After that it reuses the file, and asks again only if the remote owner contradicts it.
+2. Sets repo-local `user.name` / `user.email` (never global config).
 3. Pushes using that account's token per command (`GH_TOKEN=$(gh auth token --user X)`), so the globally active `gh` account never changes.
 4. Checks you have write access to the remote, refuses to push to the other account's repo, and can create a new repo under the right account (private by default).
 5. Commits specific files after inspecting `git status`/`git diff`, then pushes.
