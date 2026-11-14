@@ -9,3 +9,7 @@ posting/ig_session.json
 posting/ledger/
 posting/queue.json
 __pycache__/
+posting/token*.json
+posting/ig_*.json
+posting/accounts.json
+posting/schedule.csv

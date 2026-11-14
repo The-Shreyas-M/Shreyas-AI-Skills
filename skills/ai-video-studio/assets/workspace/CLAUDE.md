@@ -15,7 +15,7 @@ Token rule: do the heavy work inside ONE subagent/session started in this folder
 
 ## Edit job (what a subagent does)
 Input: video path(s) in `Raw Footage/`, desired output (long video / Shorts / Reels), style notes.
-1. Pick the engine (skills installed globally):
+1. Pick the engine (skills installed globally; entry point for the owner is `/ai-video`; read only the SKILL.md you need):
    - Owner talking head + wants b-roll/screen footage, music, hook titles -> skill `shorts-from-main-video` (`make_short.py`, config JSON, use `--check` first).
    - Long video or someone else's/podcast-style video, AI picks the best moments, auto face-reframe -> skill `clip-video` (`python run.py fetch|cut|edit` run inside its folder `~/.claude/skills/clip-video`).
    - Plain trim / cut dead air / export -> ffmpeg directly (full build is on PATH).
@@ -28,13 +28,12 @@ Music: only tracks free for commercial use without attribution (Pixabay Content 
 Never darken or "improve" the owner's face. Never invent words the speaker did not say.
 
 ## Posting (only after explicit "post it" / "schedule it")
-Everything is in `posting/`. Details: `posting/README.md`. Core commands (run with the workspace python: `Tools/.venv/Scripts/python.exe`):
-- `post.py add <video> --platform yt --when "2026-11-20 19:30" ...` or edit `posting/queue.json`
-- `post.py plan` (validates, shows ledger, no network) -> `post.py whoami` (prints which YouTube channel the token controls; must equal `expected_channel`) -> `post.py run --platform yt --max 3` (dry run) -> add `--execute` only when the owner said go.
-- Queue items need `"approved": true` (set by `post.py approve <id>` after the owner confirmed). Unapproved items are never posted.
-- Safety design (do not weaken): ledger with unique key + claim-before-upload, adopt-existing-by-title, halt on any ambiguous error, never auto-retry ambiguous, dry-run default, lock file, `expected_channel` check, YouTube per-channel upload limit stops the run cleanly.
-- Never type or print passwords/tokens. `.env`, `token.json`, `client_secrets.json`, `ig_session.json` stay local and git-ignored. The owner creates accounts and does OAuth login themselves (`post.py auth`).
-- YouTube = official API (scheduled via `publishAt`, PC need not stay on). Instagram = unofficial `instagrapi` (risk of action blocks, keep pace slow, max a few per day) and is optional. TikTok/others: `post.py pack` writes caption + file for manual upload.
+After the owner approves an edit, **ASK which account(s) each video goes to** (list them with `post.py accounts`; offer "none, I will post manually") and when (a date/time, or "one per day at 19:30"). Never assume an account. Details: `posting/README.md`. Run with `Tools/.venv/Scripts/python.exe`:
+- One video: `post.py add <video> --accounts a,b --title T --when "YYYY-MM-DD HH:MM"`. Many (e.g. 40): fill `posting/schedule.csv` and `post.py import schedule.csv --start DATE --times 07:30,19:30 --per-day 2`.
+- `post.py plan` -> show the owner the table -> owner watched/confirmed -> `post.py approve <id|all>` -> dry run `post.py run --account NAME --max N` -> `--execute` only on an explicit "go". Repeat per account.
+- Safety design (do not weaken): approved-only, ledger with unique key + claim-before-upload, adopt-existing-by-title, halt on any ambiguous error (never auto-retry), dry-run default, lock file, per-account `expected_channel` check, upload-limit stops cleanly.
+- Never type or print passwords/tokens. `.env`, `token*.json`, `client_secrets.json`, `ig_*.json`, `accounts.json` stay local and git-ignored. The owner creates accounts and does each one-time login (`post.py auth --account NAME`).
+- YouTube = official API (scheduled through `publishAt`, PC need not stay on). Instagram = unofficial `instagrapi` (action-block risk: slow pace, few per day), optional. TikTok/others: `post.py pack <id>` for manual upload.
 
 ## Style
 Read `References/brand-sheet.md` if present. House look of the existing Shorts: split screen (b-roll top, face bottom), word-by-word yellow captions, hook title, progress bar, 1.1x speed, quiet whooshes, ducked calm-phonk music.
