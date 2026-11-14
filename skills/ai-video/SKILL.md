@@ -35,6 +35,14 @@ Faceless details and voice options: `references/faceless.md`. If a module folder
 7. **Post/schedule** only after an explicit go: dry run, show the plan, then `--execute`. Batch with a CSV.
 8. Report links/times. Report failures verbatim.
 
+## Creative rules (learned from a failed first cut; always apply)
+1. **Hook first.** A Short must show AND say its hook in the first 1-3 seconds (a bold claim, a question, a result), before any context. If you clip an existing video, move the hook line to the start. Never open on "hi", a title card or a warm-up. Check frame 0-3 s before delivering.
+2. **Lead with examples.** Promo or explainer videos open with the real result playing (phones/mockups with real footage), then explain. Show, do not describe.
+3. **Captions come from the script when the audio is synthetic** (`shorts-from-main-video/scripts/align_script.py`): script words are displayed, Whisper only supplies timing, mismatches are printed and a mismatch like "Claude" heard as "clod" means the voice mispronounced it: reword and regenerate that clip. For real recordings, proof-read the transcript for names/brands first.
+4. **Never reuse a music track** across videos or channels. Use a different licensed track per video (keep a `work/music/music.json` log of titles/licences and what was used where). Voice ducks the music; whooshes only at cuts.
+5. **Elegant, not rigid:** clean type, generous spacing, soft gradients, glass cards, real footage in phone mockups, kinetic hook text; keep captions out of platform UI zones (top 220 px, bottom 420 px of vertical video).
+6. Delegate mechanical work (music sourcing, frame extraction, example clips) to subagents with tight briefs; keep creative decisions and QA in the main chat.
+
 ## Hard rules
 - Never post, publish or schedule without explicit approval after the owner saw the final files and chose the accounts.
 - Never type passwords/tokens; the owner creates accounts and does logins (OAuth). Credentials stay local.

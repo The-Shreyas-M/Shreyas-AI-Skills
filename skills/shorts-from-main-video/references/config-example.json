@@ -7,7 +7,7 @@
   "music": "music/calm-phonk.mp3",
   "music_start": 12,
   "music_volume": 0.55,
-  "fix_words": {"Shreyaas": "Shreyas"},
+  "fix_words": {"Kubernets": "Kubernetes"},
   "parts": [
     {"lines": [0, 1], "broll": "broll/screen-scroll.mp4", "broll_start": 0.5},
     {"lines": [5, 6, 7], "broll": "broll/feature-clip.mp4", "broll_start": 0.6},

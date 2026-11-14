@@ -1,11 +1,11 @@
 ---
 name: shorts-from-main-video
-description: Turn a talking-head main video (phone recording of the creator explaining something) into punchy vertical YouTube Shorts / Reels / TikToks - b-roll on top, big face underneath, word-by-word yellow captions, hook title, progress bar, 1.1x speed, free calm-phonk music that ducks under the voice. Also gives the creator a filming guide so the footage edits well, and covers how to record screen b-roll and source license-free music. Use when the user wants Shorts from a video, asks how to record a video that will be easy to edit, or wants the same edit style as the "I Am Shreyas" Shorts that got hundreds of views.
+description: Turn a talking-head main video (phone recording of the creator explaining something) into punchy vertical YouTube Shorts / Reels / TikToks - b-roll on top, big face underneath, word-by-word yellow captions, hook title, progress bar, 1.1x speed, free calm-phonk music that ducks under the voice. Also gives the creator a filming guide so the footage edits well, and covers how to record screen b-roll and source license-free music. Use when the user wants Shorts from a video, asks how to record a video that will be easy to edit,.
 ---
 
 # Shorts from a main video
 
-Proven recipe (3 Shorts from one 2-minute phone video; two got hundreds of views within days). Pipeline: **record -> transcribe -> pick lines -> b-roll -> render -> check -> post**. Everything runs locally with ffmpeg + faster-whisper. No paid editor.
+Proven recipe (3 Shorts from one 2-minute phone video). Pipeline: **record -> transcribe -> pick lines -> b-roll -> render -> check -> post**. Everything runs locally with ffmpeg + faster-whisper. No paid editor.
 
 ## v2: best of both worlds (what changed)
 
@@ -27,10 +27,8 @@ Ours = story-driven edit of the creator's own video (b-roll + face split screen,
 | Impact font (or any bold .ttf via `font_file`) | no | Windows has it; else Anton from Google Fonts |
 | `opencv-python<5` (only for `face_crop: "auto"`) | no | `pip install "opencv-python<5"` |
 | Node.js 18+ and `playwright-core` + Chromium | only to record website b-roll | `npm i playwright-core && npx playwright install chromium` |
-| Skill `youtube` (titles, SEO, thumbnail briefs) | recommended | `npx skills add https://github.com/agricidaniel/claude-youtube` (or copy its `skills/claude-youtube` to `~/.claude/skills/youtube`) |
-| Skill `one-file-launch-guide` (posting guide with copy buttons) | recommended | `npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill one-file-launch-guide` |
+| Skill `youtube` (titles, SEO, thumbnail briefs) | recommended | installed by this repo's `install.py` |
 | Skill `playwright-cli` / a browser tool | for b-roll and for reading the Pixabay track page | `npx skills add https://github.com/microsoft/playwright-cli --skill playwright-cli` |
-| Skill `gitcp` | to back up the project | `npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill gitcp` |
 
 Verify everything: `python scripts/check_setup.py` (prints exactly what to install). Nothing here needs a GPU or paid account; transcription of a 2-minute video takes about a minute on CPU.
 
@@ -50,7 +48,11 @@ Share it BEFORE they record. The footage quality decides the edit quality. Short
 1. Copy the phone file into the work folder. If ffmpeg complains `Invalid color space`, remux with a bitstream filter:
    `ffmpeg -i in.mp4 -c copy -bsf:v h264_metadata=colour_primaries=1:transfer_characteristics=1:matrix_coefficients=1 fixed.mp4`
 2. Transcribe: `python scripts/transcribe.py fixed.mp4 work/` -> prints numbered lines `L0, L1, ...` with timestamps and writes `work/tr.json`.
-3. Read the transcript. Fix names the model spelled wrong via `fix_words` in the config (e.g. `"Shreyaas": "Shreyas"`).
+3. Read the transcript. Fix names the model spelled wrong via `fix_words` in the config (e.g. `"Kubernets": "Kubernetes"`).
+
+## 2b. Hook-first rule (non-negotiable)
+The first 1-3 seconds must contain the hook, both spoken and on screen (title text from frame 0). When clipping, MOVE the hook line (or the most surprising line) to the start; use a `ranges` splice with the hook first and the context after it. A Short that starts with context is a failed Short. After rendering, look at frames 0, 15 and 45 (0 s, 0.5 s, 1.5 s): the hook text and a moving visual must already be there.
+Synthetic/known script? Do not use Whisper text for captions: use `scripts/align_script.py` (script words + Whisper timing, prints mismatches). Never reuse a music track across videos.
 
 ## 3. Pick the story of each Short (20-22 s each)
 
