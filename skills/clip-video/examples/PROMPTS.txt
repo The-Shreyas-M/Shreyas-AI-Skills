@@ -1,0 +1,21 @@
+FIRST RUN
+Open this extracted folder in Claude Code. Check setup with python3 run.py doctor.
+Then clip this video: [URL OR LOCAL PATH]
+Give me 5 self-contained vertical clips with strong hooks, complete endings, word-timed
+captions, subtle zooms, and light sound effects. Review the output before delivering it.
+
+JUST THE CUTS
+/clip-video [URL OR LOCAL PATH]
+Pick the best 3 moments. Cut to vertical, but do not add captions, zooms, or SFX.
+
+CUSTOM LOOK
+Edit project [PROJECT NAME] with sentence-case captions, accent #D7FF00, captions slightly
+higher, and no sound effects. Preserve natural speech timing.
+
+REFINE A CLIP
+For clip [NUMBER] in project [PROJECT NAME], start on the first word of [EXACT QUOTE]
+and end after [EXACT FINAL SENTENCE]. Recheck the word boundaries, then rerender that clip.
+
+LOCAL FILE
+Clip this local video: [FULL PATH TO YOUR VIDEO]
+Create 4 vertical clips under 45 seconds with captions and no sound effects.

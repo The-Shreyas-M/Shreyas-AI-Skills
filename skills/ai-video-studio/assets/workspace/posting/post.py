@@ -1,0 +1,441 @@
+"""Safe, idempotent poster/scheduler: YouTube (official API, Shorts + long) and Instagram Reels (optional).
+
+Design rules (a previous runner posted the same reel 2-4 times, so these are not optional):
+  1. One job = (platform, queue id, file content-hash). The SQLite ledger has a UNIQUE key on it.
+  2. A job is CLAIMED in the ledger (atomic) BEFORE any network write. Only the claimer uploads.
+  3. Before uploading we look at what is ALREADY on the platform and adopt a match instead of re-uploading.
+  4. Any ambiguous failure marks the job AMBIGUOUS and HALTS the run. AMBIGUOUS jobs are never auto-retried.
+  5. A lock file prevents two runs at once. Dry-run is the default; nothing is written without --execute.
+  6. Only items with "approved": true are posted (set by `approve` after the owner watched the video).
+  7. `expected_channel` in queue.json must equal the channel the YouTube token controls, else halt.
+
+Commands (workspace python, run from anywhere):
+  post.py auth                              one-time YouTube login (opens a browser; the OWNER does it)
+  post.py whoami                            print the YouTube channel the token controls
+  post.py add <video> --platform yt,ig --title T --description D [--tags a,b] --when "2026-11-20 19:30" [--thumb img]
+  post.py approve <id|all>                  mark as watched + confirmed by the owner
+  post.py plan                              validate queue + show ledger (no network)
+  post.py run --platform yt|ig [--max N] [--execute]
+  post.py status                            ledger
+  post.py pack <id>                         caption+file bundle for manual platforms (TikTok etc.)
+"""
+import argparse, hashlib, json, os, random, re, sqlite3, sys, time
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+HERE = Path(__file__).resolve().parent
+WS = HERE.parent                                    # the "AI Video Editor" folder
+QUEUE = HERE / "queue.json"
+LEDGER = HERE / "ledger"
+DB = LEDGER / "ledger.db"
+try:
+    from dotenv import load_dotenv
+    load_dotenv(HERE / ".env")
+except Exception:
+    pass
+
+YT_SCOPE = ["https://www.googleapis.com/auth/youtube"]
+YT_MIN_LEAD = timedelta(minutes=15)
+IG_MIN_LEAD = timedelta(minutes=25)
+IG_PAUSE = (25, 45)
+YT_PAUSE = (20, 40)
+
+
+def tz():
+    off = load_queue().get("timezone_offset", "+05:30")
+    sign = -1 if off.startswith("-") else 1
+    h, m = off.lstrip("+-").split(":")
+    return timezone(sign * timedelta(hours=int(h), minutes=int(m)))
+
+
+def load_queue():
+    if not QUEUE.exists():
+        return {"expected_channel": "", "timezone_offset": "+05:30", "items": []}
+    return json.loads(QUEUE.read_text(encoding="utf-8"))
+
+
+def save_queue(q):
+    QUEUE.write_text(json.dumps(q, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def sha(p):
+    h = hashlib.sha256()
+    with open(p, "rb") as f:
+        for ch in iter(lambda: f.read(1 << 20), b""):
+            h.update(ch)
+    return h.hexdigest()[:16]
+
+
+def vpath(it):
+    p = Path(it["file"])
+    return p if p.is_absolute() else WS / p
+
+
+def when_dt(it):
+    return datetime.strptime(it["when"], "%Y-%m-%d %H:%M").replace(tzinfo=tz())
+
+
+def validate(q):
+    errs, seen = [], set()
+    for it in q["items"]:
+        if it["id"] in seen:
+            errs.append(f"duplicate id {it['id']}")
+        seen.add(it["id"])
+        if not vpath(it).exists():
+            errs.append(f"{it['id']}: file missing {it['file']}")
+        if len(it.get("title", "")) > 100 or not it.get("title"):
+            errs.append(f"{it['id']}: title missing or >100 chars")
+        if len(it.get("description", "")) > 4900:
+            errs.append(f"{it['id']}: description >4900")
+    hashes = {}
+    for it in q["items"]:
+        if vpath(it).exists():
+            hashes.setdefault(sha(vpath(it)), []).append(it["id"])
+    for h, ids in hashes.items():
+        if len(ids) > 1:
+            errs.append(f"same video content in {ids}")
+    return errs
+
+
+# ---------------------------------------------------------------- ledger
+def db():
+    LEDGER.mkdir(exist_ok=True)
+    c = sqlite3.connect(DB, timeout=30, isolation_level=None)
+    c.execute("PRAGMA journal_mode=WAL")
+    c.execute("""CREATE TABLE IF NOT EXISTS jobs(platform TEXT NOT NULL, job_id TEXT NOT NULL, key TEXT NOT NULL,
+        state TEXT NOT NULL, remote_id TEXT, attempts INTEGER NOT NULL DEFAULT 0, note TEXT, updated TEXT NOT NULL,
+        PRIMARY KEY(platform, job_id))""")
+    c.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_remote ON jobs(platform, remote_id) WHERE remote_id IS NOT NULL")
+    return c
+
+
+def now():
+    return datetime.now(tz()).isoformat(timespec="seconds")
+
+
+def jid(it):
+    return f"{it['id']}:{sha(vpath(it))}"
+
+
+def get(c, plat, job_id):
+    r = c.execute("SELECT state,remote_id,attempts,note FROM jobs WHERE platform=? AND job_id=?", (plat, job_id)).fetchone()
+    return dict(zip(("state", "remote_id", "attempts", "note"), r)) if r else None
+
+
+def claim(c, plat, it):
+    c.execute("BEGIN IMMEDIATE")
+    try:
+        r = get(c, plat, jid(it))
+        if r is None:
+            c.execute("INSERT INTO jobs VALUES(?,?,?,?,?,?,?,?)", (plat, jid(it), it["id"], "CLAIMED", None, 1, "", now()))
+            ok = True
+        elif r["state"] == "FAILED_SAFE" and r["attempts"] < 3:
+            c.execute("UPDATE jobs SET state='CLAIMED',attempts=attempts+1,updated=? WHERE platform=? AND job_id=?", (now(), plat, jid(it)))
+            ok = True
+        else:
+            ok = False
+        c.execute("COMMIT")
+        return ok
+    except Exception:
+        c.execute("ROLLBACK")
+        raise
+
+
+def setstate(c, plat, it, state, remote_id=None, note=None):
+    c.execute("UPDATE jobs SET state=?,remote_id=COALESCE(?,remote_id),note=COALESCE(?,note),updated=? WHERE platform=? AND job_id=?",
+              (state, remote_id, note, now(), plat, jid(it)))
+
+
+class Lock:
+    def __init__(self, name):
+        self.p = LEDGER / f"run-{name}.lock"
+
+    def __enter__(self):
+        LEDGER.mkdir(exist_ok=True)
+        if self.p.exists() and time.time() - self.p.stat().st_mtime < 6 * 3600:
+            sys.exit(f"another run is active ({self.p}). If it crashed, delete the lock file.")
+        self.p.write_text(str(os.getpid()))
+
+    def __exit__(self, *a):
+        self.p.unlink(missing_ok=True)
+
+
+# ---------------------------------------------------------------- YouTube
+def yt_files():
+    tf = Path(os.getenv("YOUTUBE_TOKEN_FILE", "token.json"))
+    cs = Path(os.getenv("YOUTUBE_CLIENT_SECRETS_FILE", "client_secrets.json"))
+    return (tf if tf.is_absolute() else HERE / tf), (cs if cs.is_absolute() else HERE / cs)
+
+
+def yt_service():
+    from google.oauth2.credentials import Credentials
+    from google.auth.transport.requests import Request
+    from googleapiclient.discovery import build
+    tf, _ = yt_files()
+    if not tf.exists():
+        sys.exit("no YouTube token. Run `post.py auth` (the owner logs in once).")
+    creds = Credentials.from_authorized_user_file(str(tf), YT_SCOPE)
+    if not creds.valid:
+        creds.refresh(Request())
+        tf.write_text(creds.to_json())
+    return build("youtube", "v3", credentials=creds, cache_discovery=False)
+
+
+def yt_channel(yt):
+    r = yt.channels().list(part="snippet", mine=True).execute()["items"][0]
+    return r["id"], r["snippet"]["title"]
+
+
+def yt_uploads(yt):
+    """{video_id: {title, privacy, publishAt}} for the whole channel (incl. private/scheduled)."""
+    ch = yt.channels().list(part="contentDetails", mine=True).execute()["items"][0]
+    pl = ch["contentDetails"]["relatedPlaylists"]["uploads"]
+    out, tok = {}, None
+    while True:
+        r = yt.playlistItems().list(part="contentDetails", playlistId=pl, maxResults=50, pageToken=tok).execute()
+        ids = [i["contentDetails"]["videoId"] for i in r["items"]]
+        if ids:
+            for v in yt.videos().list(part="snippet,status", id=",".join(ids)).execute()["items"]:
+                out[v["id"]] = {"title": v["snippet"]["title"], "privacy": v["status"]["privacyStatus"],
+                                "publishAt": v["status"].get("publishAt")}
+        tok = r.get("nextPageToken")
+        if not tok:
+            return out
+
+
+def http_reason(e):
+    try:
+        return json.loads(e.content.decode())["error"]["errors"][0]["reason"]
+    except Exception:
+        return "unknown"
+
+
+def yt_run(items, c, maxn, execute):
+    from googleapiclient.errors import HttpError
+    from googleapiclient.http import MediaFileUpload
+    yt = yt_service()
+    cid, title = yt_channel(yt)
+    exp = load_queue().get("expected_channel", "")
+    print(f"YouTube channel: {title} ({cid})")
+    if execute and (not exp or exp.strip().lower() != title.strip().lower()):
+        sys.exit(f"HALT: expected_channel is '{exp}' but the token controls '{title}'. Fix queue.json or re-run `post.py auth`.")
+    uploads = yt_uploads(yt)
+    done = 0
+    for it in items:
+        st = get(c, "yt", jid(it))
+        if st and st["state"] in ("DONE", "UPLOADED"):
+            continue
+        match = [v for v, d in uploads.items() if d["title"] == it["title"]]
+        if st and st["state"] in ("AMBIGUOUS", "CLAIMED"):
+            if len(match) == 1 and execute:
+                setstate(c, "yt", it, "DONE", remote_id=match[0], note="adopted")
+                print(f"[adopt] {it['id']}: {match[0]}")
+            else:
+                print(f"[BLOCKED] {it['id']}: state {st['state']}, {len(match)} matches; needs a manual look")
+            continue
+        if match:
+            print(f"[adopt] {it['id']}: already on channel {match}")
+            if execute and len(match) == 1 and not st:
+                c.execute("INSERT INTO jobs VALUES('yt',?,?,?,?,?,?,?)", (jid(it), it["id"], "DONE", match[0], 0, "adopted", now()))
+            continue
+        if done >= maxn:
+            break
+        when = when_dt(it)
+        immediate = it.get("when", "") == "now"
+        if when - datetime.now(tz()) < YT_MIN_LEAD:
+            print(f"[SKIP] {it['id']}: slot {when:%d %b %H:%M} is past or less than 15 min away")
+            continue
+        publish = when.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        tags = [t.lstrip("#") for t in (it.get("tags") or re.findall(r"#\w+", it.get("description", "")))][:15]
+        body = {"snippet": {"title": it["title"], "description": it.get("description", ""), "tags": tags,
+                            "categoryId": it.get("category", "22"), "defaultLanguage": "en"},
+                "status": {"privacyStatus": "private", "publishAt": publish, "selfDeclaredMadeForKids": False}}
+        print(f"[{done + 1}] YT {it['id']} | {it['title']} | publishes {when:%a %d %b %H:%M} ({publish})")
+        if not execute:
+            print("   (dry-run: no upload)")
+            done += 1
+            continue
+        if not claim(c, "yt", it):
+            print("   not claimable; skipping")
+            continue
+        try:
+            req = yt.videos().insert(part="snippet,status", body=body,
+                                     media_body=MediaFileUpload(str(vpath(it)), chunksize=8 << 20, resumable=True))
+            resp = None
+            while resp is None:
+                _, resp = req.next_chunk(num_retries=3)
+            vid = resp["id"]
+        except HttpError as e:
+            reason = http_reason(e)
+            if reason in ("quotaExceeded", "uploadLimitExceeded", "dailyLimitExceeded", "rateLimitExceeded"):
+                c.execute("DELETE FROM jobs WHERE platform='yt' AND job_id=? AND state='CLAIMED'", (jid(it),))
+                print(f"   STOP: {reason}. Nothing created; claim released. Retry later.")
+                return done
+            setstate(c, "yt", it, "AMBIGUOUS", note=f"HttpError {reason}")
+            mm = [v for v, d in yt_uploads(yt).items() if d["title"] == it["title"]]
+            if len(mm) == 1:
+                setstate(c, "yt", it, "DONE", remote_id=mm[0], note="recovered after error")
+            print(f"   HALT: ambiguous error {reason}")
+            return done
+        except Exception as e:
+            setstate(c, "yt", it, "AMBIGUOUS", note=type(e).__name__)
+            print(f"   HALT: {type(e).__name__}: {e}")
+            return done
+        setstate(c, "yt", it, "DONE", remote_id=vid)
+        print(f"   uploaded + scheduled: https://youtu.be/{vid}")
+        if it.get("thumbnail"):
+            try:
+                yt.thumbnails().set(videoId=vid, media_body=MediaFileUpload(str(WS / it["thumbnail"]))).execute()
+            except Exception as e:
+                print(f"   thumbnail failed ({e}); set it in Studio")
+        done += 1
+        if done < maxn:
+            time.sleep(random.uniform(*YT_PAUSE))
+    return done
+
+
+# ---------------------------------------------------------------- Instagram (optional, unofficial)
+def ig_run(items, c, maxn, execute):
+    try:
+        from instagrapi import Client
+    except Exception:
+        sys.exit("instagrapi not installed (optional): Tools/.venv/Scripts/pip install instagrapi")
+    cl = Client()
+    sess = Path(os.getenv("IG_SESSION_FILE", "ig_session.json"))
+    sess = sess if sess.is_absolute() else HERE / sess
+    if sess.exists():
+        cl.load_settings(sess)
+    cl.login(os.environ["IG_USERNAME"], os.environ["IG_PASSWORD"])
+    cl.dump_settings(sess)
+    done = 0
+    for it in items:
+        st = get(c, "ig", jid(it))
+        if st and st["state"] != "FAILED_SAFE":
+            continue
+        if done >= maxn:
+            break
+        when = when_dt(it)
+        if when - datetime.now(tz()) < IG_MIN_LEAD:
+            print(f"[SKIP] {it['id']}: Instagram needs >= 25 min lead")
+            continue
+        cap = it.get("ig_caption") or (it.get("title", "") + "\n\n" + it.get("description", ""))
+        print(f"[{done + 1}] IG {it['id']} | schedule {when:%a %d %b %H:%M}")
+        if not execute:
+            print("   (dry-run: no upload)")
+            done += 1
+            continue
+        if not claim(c, "ig", it):
+            continue
+        try:
+            extra = cl._scheduled_extra_data({}, when)
+            media = cl.clip_upload(path=vpath(it), caption=cap, extra_data=extra)
+            setstate(c, "ig", it, "DONE", remote_id=str(media.pk), note=f"scheduled {when.isoformat()}")
+            print(f"   scheduled OK, media {media.pk}")
+        except Exception as e:
+            setstate(c, "ig", it, "AMBIGUOUS", note=type(e).__name__)
+            print(f"   HALT (ambiguous, check Instagram before retrying): {type(e).__name__}: {e}")
+            return done
+        done += 1
+        if done < maxn:
+            time.sleep(random.uniform(*IG_PAUSE))
+    return done
+
+
+# ---------------------------------------------------------------- CLI
+def selected(q, plat, only_ids=None):
+    out = []
+    for it in sorted(q["items"], key=lambda i: i["when"]):
+        plats = it["platform"] if isinstance(it["platform"], list) else [p.strip() for p in it["platform"].split(",")]
+        if plat in plats and it.get("approved") is True and (not only_ids or it["id"] in only_ids):
+            out.append(it)
+    return out
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("auth")
+    sub.add_parser("whoami")
+    sub.add_parser("plan")
+    sub.add_parser("status")
+    a = sub.add_parser("add")
+    a.add_argument("video")
+    a.add_argument("--id")
+    a.add_argument("--platform", default="yt")
+    a.add_argument("--title", required=True)
+    a.add_argument("--description", default="")
+    a.add_argument("--tags", default="")
+    a.add_argument("--when", required=True, help='"YYYY-MM-DD HH:MM" in the queue timezone')
+    a.add_argument("--thumb")
+    ap_ = sub.add_parser("approve")
+    ap_.add_argument("id")
+    r = sub.add_parser("run")
+    r.add_argument("--platform", required=True, choices=["yt", "ig"])
+    r.add_argument("--max", type=int, default=3)
+    r.add_argument("--execute", action="store_true")
+    r.add_argument("--only", default="")
+    k = sub.add_parser("pack")
+    k.add_argument("id")
+    args = ap.parse_args()
+    q = load_queue()
+
+    if args.cmd == "auth":
+        from google_auth_oauthlib.flow import InstalledAppFlow
+        tf, cs = yt_files()
+        if not cs.exists():
+            sys.exit(f"missing {cs}. Google Cloud Console -> YouTube Data API v3 -> OAuth client (Desktop) -> download JSON to that path.")
+        flow = InstalledAppFlow.from_client_secrets_file(str(cs), YT_SCOPE)
+        tf.write_text(flow.run_local_server(port=0).to_json())
+        print("token saved:", tf)
+    elif args.cmd == "whoami":
+        cid, title = yt_channel(yt_service())
+        print(f"token controls channel: {title} ({cid}); queue expected_channel: {q.get('expected_channel') or '(not set)'}")
+    elif args.cmd == "add":
+        p = Path(args.video).resolve()
+        rel = os.path.relpath(p, WS) if str(p).startswith(str(WS)) else str(p)
+        it = {"id": args.id or re.sub(r"\W+", "-", p.stem).lower(), "file": rel.replace("\\", "/"),
+              "platform": [x.strip() for x in args.platform.split(",")], "title": args.title,
+              "description": args.description, "tags": [t for t in args.tags.split(",") if t], "when": args.when,
+              "approved": False, "thumbnail": args.thumb}
+        q["items"] = [i for i in q["items"] if i["id"] != it["id"]] + [it]
+        save_queue(q)
+        print("queued (NOT approved yet):", it["id"])
+    elif args.cmd == "approve":
+        n = 0
+        for it in q["items"]:
+            if args.id in ("all", it["id"]):
+                it["approved"] = True
+                n += 1
+        save_queue(q)
+        print(f"approved {n}")
+    elif args.cmd == "plan":
+        errs = validate(q)
+        for it in q["items"]:
+            print(f"{it['id']:28} {it['when']}  {','.join(it['platform']) if isinstance(it['platform'], list) else it['platform']:6} approved={it.get('approved')}  {it['title'][:50]}")
+        print("\nERRORS:\n  " + "\n  ".join(errs) if errs else "\nqueue valid")
+    elif args.cmd == "status":
+        for row in db().execute("SELECT platform,key,state,remote_id,note,updated FROM jobs ORDER BY updated"):
+            print(row)
+    elif args.cmd == "run":
+        errs = validate(q)
+        if errs:
+            sys.exit("queue invalid: " + "; ".join(errs))
+        only = {x for x in args.only.split(",") if x}
+        c = db()
+        with Lock(args.platform):
+            fn = yt_run if args.platform == "yt" else ig_run
+            n = fn(selected(q, args.platform, only), c, args.max, args.execute)
+        print(f"{'executed' if args.execute else 'dry-run'}: {n} job(s)")
+    elif args.cmd == "pack":
+        it = next(i for i in q["items"] if i["id"] == args.id)
+        out = WS / "Exports" / "_manual" / it["id"]
+        out.mkdir(parents=True, exist_ok=True)
+        import shutil
+        shutil.copy(vpath(it), out / vpath(it).name)
+        (out / "caption.txt").write_text(f"{it['title']}\n\n{it.get('description', '')}\n", encoding="utf-8")
+        print("manual pack:", out)
+
+
+if __name__ == "__main__":
+    main()

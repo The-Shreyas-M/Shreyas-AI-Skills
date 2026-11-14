@@ -7,6 +7,16 @@ description: Turn a talking-head main video (phone recording of the creator expl
 
 Proven recipe (3 Shorts from one 2-minute phone video; two got hundreds of views within days). Pipeline: **record -> transcribe -> pick lines -> b-roll -> render -> check -> post**. Everything runs locally with ffmpeg + faster-whisper. No paid editor.
 
+## v2: best of both worlds (what changed)
+
+Ours = story-driven edit of the creator's own video (b-roll + face split screen, music, hook titles). Adopted from the professional **Devini Claude Video Clipper** (MIT, installed separately as skill `clip-video`):
+- `--check` boundary validator (warns on mid-sentence starts/ends and clips outside 15-60 s) and `scripts/find_phrase.py` for word-accurate times; custom `ranges` snap to whole words.
+- `references/picking-moments.md`: hook types, story shape, ending traps, scoring (credited, MIT).
+- `"face_crop": "auto"`: YuNet face detection (bundled model) frames the face; `face_headroom` tunes how wide.
+- Per-part zoom (`"zoom": "open|push|punch|none"`; default open on part 1, then alternating punch/push), quiet whooshes on the opening and each cut (`"sfx": "light|none"`, synthetic MIT sounds), `.srt` written next to the video, token merging ("$500", "100%"), knobs `accent`, `caption_y`, `caption_size`, `uppercase`, bundled Montserrat ExtraBold fallback font.
+
+**Which skill when:** creator's own scripted video + wants b-roll/music/titles -> this skill. A long video, podcast or someone's talk where the AI must FIND the best moments and auto-reframe faces -> `clip-video`. Orchestrated from any chat via `ai-video-studio`.
+
 ## 0. Setup (once) - all dependencies
 
 | Need | Required? | Install |
@@ -15,6 +25,7 @@ Proven recipe (3 Shorts from one 2-minute phone video; two got hundreds of views
 | faster-whisper, numpy, imageio-ffmpeg, pillow | yes | `pip install -r requirements.txt` (in this skill folder) |
 | ffmpeg **full build with libass** (captions) + sidechaincompress/loudnorm | yes | comes with `imageio-ffmpeg`; or a "full" build from gyan.dev / `brew install ffmpeg` and set env `FFMPEG` |
 | Impact font (or any bold .ttf via `font_file`) | no | Windows has it; else Anton from Google Fonts |
+| `opencv-python<5` (only for `face_crop: "auto"`) | no | `pip install "opencv-python<5"` |
 | Node.js 18+ and `playwright-core` + Chromium | only to record website b-roll | `npm i playwright-core && npx playwright install chromium` |
 | Skill `youtube` (titles, SEO, thumbnail briefs) | recommended | `npx skills add https://github.com/agricidaniel/claude-youtube` (or copy its `skills/claude-youtube` to `~/.claude/skills/youtube`) |
 | Skill `one-file-launch-guide` (posting guide with copy buttons) | recommended | `npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill one-file-launch-guide` |
