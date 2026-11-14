@@ -1,7 +1,7 @@
 """Create (or refresh) the "AI Video Editor" workspace.
 
 Usage: python setup_workspace.py [target_dir] [--no-venv]
-Default target: ~/Projects/AI Video Editor. Safe to re-run: existing files are NOT overwritten
+Default target: ~/AI Video Editor (saved in ~/.claude/ai-video-editor.json so every skill can find it). Safe to re-run: existing files are NOT overwritten
 (except nothing), folders are created, the posting venv is created if missing.
 """
 import json, os, shutil, subprocess, sys, venv
@@ -10,8 +10,11 @@ from pathlib import Path
 SKILL = Path(__file__).resolve().parent.parent
 SRC = SKILL / "assets" / "workspace"
 args = [a for a in sys.argv[1:] if not a.startswith("--")]
-target = Path(args[0]) if args else Path.home() / "Projects" / "AI Video Editor"
+ptr = Path.home() / ".claude" / "ai-video-editor.json"
+target = Path(args[0]) if args else (Path(json.loads(ptr.read_text())["workspace"]) if ptr.exists() else Path.home() / "AI Video Editor")
 target.mkdir(parents=True, exist_ok=True)
+ptr.parent.mkdir(parents=True, exist_ok=True)
+ptr.write_text(json.dumps({"workspace": str(target)}), encoding="utf-8")
 
 for p in SRC.rglob("*"):
     rel = p.relative_to(SRC)
@@ -38,6 +41,6 @@ if "--no-venv" not in sys.argv:
     print("posting packages ready (instagrapi is optional: Tools/.venv pip install instagrapi)")
 
 skills = Path.home() / ".claude" / "skills"
-for s in ("clip-video", "shorts-from-main-video", "youtube", "ai-video-studio"):
+for s in ("ai-video", "clip-video", "shorts-from-main-video", "youtube", "ai-video-studio"):
     print(("[ok]      " if (skills / s).exists() else "[MISSING] ") + f"skill {s}")
 print(f"\nWorkspace ready: {target}\nNext: drop videos into 'Raw Footage', read START-HERE.md. For posting: posting/README.md")

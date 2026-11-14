@@ -12,7 +12,7 @@ When the owner cannot record: give a script or a voiceover; Claude builds the vi
 
 ## Voiceover options (be honest with the owner)
 1. **Owner records a voiceover** (phone voice memo is fine; quiet room, 1 s pauses, short lines). Best option: it is the owner's real voice. Word timings: `skills/shorts-from-main-video/scripts/transcribe.py` (faster-whisper) or the kit's `words.py` (needs `--voice` models).
-2. **Owner's cloned voice**: made by the owner on a voice-cloning service of their choice with their OWN voice, exported as an audio file and dropped in `Raw Footage/`. Claude does not clone voices and never impersonates anyone else.
+2. **Owner's cloned voice**: made locally with Voicebox from the owner's OWN sample (`scripts/voicebox_tts.py`, see docs/VOICE.md). Claude never clones anyone else and always discloses synthetic voices.
 3. **Free built-in synthetic voice** (Kokoro, preset voices, not a clone): `bash kit/setup.sh --voice` (about 1 GB of models, optional). Fine for faceless explainers; say it is synthetic where platforms require disclosure.
 
 ## Windows notes (verified setup on this PC)

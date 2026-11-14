@@ -12,9 +12,13 @@ T = Path.home() / ".claude" / "tools"
 T.mkdir(parents=True, exist_ok=True)
 
 
-def run(cmd, cwd=None, env=None):
+def run(cmd, cwd=None, env=None, timeout=None):
     print("+", " ".join(cmd))
-    return subprocess.run(cmd, cwd=cwd, env=env).returncode
+    try:
+        return subprocess.run(cmd, cwd=cwd, env=env, timeout=timeout).returncode
+    except subprocess.TimeoutExpired:
+        print(f"!! timed out after {timeout}s (a download probably stalled). Re-run this script later; it is safe to repeat.")
+        return 124
 
 
 def clone(url, name, sparse=None):
@@ -44,5 +48,5 @@ if os.name == "nt":
     (shim / "python3").write_text(f'#!/usr/bin/env bash\nexec "{sys.executable.replace(chr(92), "/")}" "$@"\n')
     env["PATH"] = str(shim) + os.pathsep + env["PATH"]
 setup = ["bash", "kit/setup.sh"] + (["--voice"] if "--voice" in sys.argv else [])
-code = run(setup, cwd=anim, env=env)
+code = run(setup, cwd=anim, env=env, timeout=1500)
 print("\nmodules ready in", T if code == 0 else f"{T} (kit setup exit {code}: read the log above)")

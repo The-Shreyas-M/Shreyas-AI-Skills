@@ -22,7 +22,6 @@ If the user gave arguments, infer both answers. Otherwise ask with ONE `AskUserQ
 | No footage: graph / map route / exploded view / minimal line art reel | `.../claude-animation-skills/skills/graph|map-route|breakdown|minimalistic-graphics/SKILL.md` |
 | Launch video of a project or website (music, motion, share copy) | `~/.claude/tools/brag/skills/brag-slim/SKILL.md` |
 | Titles, descriptions, tags, thumbnails, content strategy | skill `youtube` |
-| Product launch guide (Gumroad + YouTube steps with copy buttons) | `~/.claude/skills/one-file-launch-guide/SKILL.md` |
 | Schedule / post (one or 40 clips) | workspace `posting/README.md` and `ai-video-studio` |
 Faceless details and voice options: `references/faceless.md`. If a module folder is missing, run `python ~/.claude/skills/ai-video/scripts/install_modules.py`.
 

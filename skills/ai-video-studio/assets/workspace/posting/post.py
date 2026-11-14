@@ -277,6 +277,8 @@ def yt_run(items, c, maxn, execute, name):
         body = {"snippet": {"title": it["title"], "description": it.get("description", ""), "tags": tags,
                             "categoryId": it.get("category", "22"), "defaultLanguage": "en"},
                 "status": {"privacyStatus": "private", "publishAt": publish, "selfDeclaredMadeForKids": False}}
+        if it.get("synthetic"):  # YouTube altered/synthetic-content disclosure
+            body["status"]["containsSyntheticMedia"] = True
         print(f"[{done + 1}] {name} {it['id']} | {it['title']} | publishes {when:%a %d %b %H:%M} ({publish})")
         if not execute:
             print("   (dry-run: no upload)")
@@ -412,6 +414,7 @@ def main():
     a.add_argument("--tags", default="")
     a.add_argument("--when", required=True, help='"YYYY-MM-DD HH:MM" in the queue timezone')
     a.add_argument("--thumb")
+    a.add_argument("--synthetic", action="store_true", help="mark as AI-generated/synthetic (YouTube disclosure flag)")
     im = sub.add_parser("import", help="bulk-add from a CSV (see README)")
     im.add_argument("csv")
     im.add_argument("--start", help="auto-slot rows with empty 'when' from this date YYYY-MM-DD")
@@ -453,7 +456,7 @@ def main():
         p = Path(args.video).resolve()
         it = {"id": args.id or slug(p), "file": rel(p), "accounts": [x.strip() for x in args.accounts.split(",")],
               "title": args.title, "description": args.description, "tags": [t for t in args.tags.split(",") if t],
-              "when": args.when, "approved": False, "thumbnail": args.thumb}
+              "when": args.when, "approved": False, "thumbnail": args.thumb, "synthetic": args.synthetic}
         for n in it["accounts"]:
             acct(n)
         q["items"] = [i for i in q["items"] if i["id"] != it["id"]] + [it]
@@ -477,7 +480,8 @@ def main():
                   "description": (r_.get("description") or "").replace("\\n", "\n"),
                   "tags": [t.strip() for t in (r_.get("tags") or "").split(";") if t.strip()],
                   "when": (r_.get("when") or "").strip() or next(slots), "approved": False,
-                  "thumbnail": (r_.get("thumbnail") or None), "ig_caption": (r_.get("ig_caption") or None)}
+                  "thumbnail": (r_.get("thumbnail") or None), "ig_caption": (r_.get("ig_caption") or None),
+                  "synthetic": (r_.get("synthetic") or "").strip().lower() in ("1", "true", "yes")}
             q["items"] = [i for i in q["items"] if i["id"] != it["id"]] + [it]
             n += 1
         save_queue(q)

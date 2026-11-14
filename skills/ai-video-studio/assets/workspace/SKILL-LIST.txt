@@ -1,0 +1,31 @@
+AI VIDEO EDITOR: SKILL CHEAT SHEET
+==================================
+Remember only ONE thing: type  /ai-video  in Claude Code. It asks what you have and what you want, then uses the right tool below.
+
+SKILLS (in ~/.claude/skills)
+  ai-video                 The single entry point. Routes any video job to the right tool and keeps token use low.
+  ai-video-studio          The workflow + workspace folder: drop videos, subagent edits, you approve, posting queue.
+  shorts-from-main-video   Your own talking-head video -> Shorts/Reels (b-roll on top, face below, captions, titles, zooms, music).
+  clip-video               Long video or YouTube link -> best moments as Shorts; AI picks moments, face-tracked reframing.
+  youtube                  Titles, descriptions, tags, thumbnails, SEO, content strategy (third-party).
+
+MODULES (in ~/.claude/tools, read on demand by /ai-video)
+  claude-animation-skills  No footage needed: stick-figure explainer, 3D cartoon explainer, graph, map route, exploded view, minimal line art.
+  brag-slim                Turns a project directory or website URL into a short launch video with music and share copy.
+  HyperFrames              The HTML-to-MP4 renderer under the animation tools (npx hyperframes).
+
+WORKSPACE (~/AI Video Editor)
+  Raw Footage/             your originals (never modified)
+  Exports/<project>/       finished videos + .srt + post info
+  References/brand-sheet.md  your style rules (edit once)
+  posting/                 post.py: schedule/post to YouTube (official API), Instagram (optional); accounts.json, schedule.csv
+  CLAUDE.md                the rules every Claude chat follows in this folder
+
+COMMON PROMPTS
+  /ai-video
+  "Make 3 Shorts from Raw Footage/talk.mp4"
+  "Clip this YouTube video: <link>"
+  "Make a faceless 30-second explainer about <topic>, here is my voiceover"
+  "Make a launch video for my website <url>"
+  "Schedule these 40 clips on <account>, 2 per day from Monday"
+  Then: watch Exports/, say "approved", answer "which accounts / when?".

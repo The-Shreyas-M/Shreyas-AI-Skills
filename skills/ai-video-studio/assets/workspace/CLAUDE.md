@@ -36,4 +36,4 @@ After the owner approves an edit, **ASK which account(s) each video goes to** (l
 - YouTube = official API (scheduled through `publishAt`, PC need not stay on). Instagram = unofficial `instagrapi` (action-block risk: slow pace, few per day), optional. TikTok/others: `post.py pack <id>` for manual upload.
 
 ## Style
-Read `References/brand-sheet.md` if present. House look of the existing Shorts: split screen (b-roll top, face bottom), word-by-word yellow captions, hook title, progress bar, 1.1x speed, quiet whooshes, ducked calm-phonk music.
+Read `References/brand-sheet.md` if present. Default house look of the Shorts: split screen (b-roll top, face bottom), word-by-word yellow captions, hook title, progress bar, 1.1x speed, quiet whooshes, ducked calm-phonk music.

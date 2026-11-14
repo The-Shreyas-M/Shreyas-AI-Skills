@@ -1,11 +1,11 @@
 ---
 name: ai-video-studio
-description: The owner's AI Video Editor workspace (folder "AI Video Editor": Raw Footage, References, Exports, posting queue). Use in ANY chat when the user wants videos edited (long video, Shorts, Reels) from files they dropped in that folder, wants to review and approve the result, and then wants it posted or scheduled on YouTube/Shorts/Instagram. Handles delegation to a subagent or a second Claude Code session in that folder to keep tokens low, and a safe approve-then-post pipeline. Also sets the workspace up from scratch on a new machine.
+description: The AI Video Editor workspace (folder "AI Video Editor": Raw Footage, References, Exports, posting queue). Use in ANY chat when the user wants videos edited (long video, Shorts, Reels) from files they dropped in that folder, wants to review and approve the result, and then wants it posted or scheduled on YouTube/Shorts/Instagram. Handles delegation to a subagent or a second Claude Code session in that folder to keep tokens low, and a safe approve-then-post pipeline. Also sets the workspace up from scratch on a new machine.
 ---
 
 # AI Video Studio
 
-Workspace (default `C:\Users\<user>\Projects\AI Video Editor`; find it first, do not recreate if it exists). Everything the worker must follow is in that folder's **`CLAUDE.md`**; how the user uses it is in **`START-HERE.md`**; posting in **`posting/README.md`**.
+Workspace: its path is in `~/.claude/ai-video-editor.json` (key `workspace`; default `~/AI Video Editor`). Find it first; do not recreate if it exists. Everything the worker must follow is in that folder's **`CLAUDE.md`**; how the user uses it is in **`START-HERE.md`**; posting in **`posting/README.md`**.
 
 ## When invoked in a chat
 1. Locate the folder. If it is missing, set it up: `python <skill>/scripts/setup_workspace.py` (creates folders, rules, posting module, posting venv; re-runnable).
