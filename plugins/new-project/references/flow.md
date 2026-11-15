@@ -1,8 +1,3 @@
----
-name: new-project
-description: Start any new project the right way (/new-project). Interviews the owner in depth, writes the spec, creates the repo scaffold (CLAUDE.md, SPEC, TODO, HANDOFF, WORKFLOW, cheap subagents), decides local vs cloud, then builds the project in small agile sprints as an orchestrator that delegates to free/cheap models. Use when the user types /new-project, says "start a new project", "kick off a project", or wants to set up a repo for agentic building.
-argument-hint: "[project name]"
----
 
 # /new-project — interview, scaffold, then build in sprints
 
@@ -14,7 +9,10 @@ Do the phases in order. Do not write project code before Phase 5.
 
 ## Phase 1 — Open (one round)
 
-Ask in one AskUserQuestion call (skip anything given in the arguments):
+`<root>` below = the plugin root path the sub-skill that sent you here printed.
+If that sub-skill already fixed the type (`iot-hardware`, `web-app`, `local-app`), do not ask it again.
+
+Ask in one AskUserQuestion call (skip anything already given):
 1. Project name (free text).
 2. Type: **IoT / hardware** · **Web app** · **Local app or tool** · **Something else** (video/content, library, research…).
 3. One sentence: what it does and for whom.
@@ -28,7 +26,7 @@ Show the matching rows and ask which to load (multi-select, include "None, start
 
 | Type | Offer |
 |---|---|
-| IoT / hardware | `iot-engineer` |
+| IoT / hardware | `iot-engineer:start` now; later, as the work reaches them: `iot-engineer:prototype-designer`, `:breadboard-circuit-designer`, `:pcb-designer`, `:firmware-esp-idf`, `:firmware-arduino`, `:debug` |
 | Web app | `ui-ux-pro-max`, `frontend-design` |
 | Video / content | `ai-video` |
 | Any, when it's time to push | `gitcp` (always used for commit/push, no need to ask) |
@@ -38,7 +36,10 @@ the first UI sprint, not during the interview).
 
 ## Phase 3 — Interview
 
-Read `references/interview.md` and follow it. Rules:
+Read `<root>/references/interview-core.md` and the one file for the type:
+`interview-iot.md`, `interview-web.md`, `interview-local.md` or `interview-other.md`
+(mixed project → both). For IoT also ask the chip intake in the iot-engineer
+plugin's `references/chips.md` if that plugin is installed. Rules:
 - 3–4 questions per round, multiple choice with a recommended default wherever possible.
 - Never ask what was already answered. Never ask what you can decide yourself and note as an assumption.
 - Stop when every SPEC section can be filled. Usually 4–6 rounds.
@@ -48,12 +49,13 @@ Read `references/interview.md` and follow it. Rules:
 
 1. Create the folder `~/Projects/<name>` (ask if a different place is wanted) and copy the template in one command — do not retype the files:
    ```bash
-   S="$HOME/.claude/skills/new-project/template"; P="<project path>"
+   S="<root>/template"; P="<project path>"
    mkdir -p "$P" && cp -r "$S/." "$P/" && mv "$P/dot-claude" "$P/.claude" && cd "$P" && git init -q
    ```
 2. You write `docs/SPEC.md` yourself from the interview (this is the one file that needs your judgment). Give every requirement an id (`R1`, `R2`…) and a priority (Must / Should / Later).
 3. You write Sprint 1–2 in `TODO.md` (3–7 tasks each, each task cites an R-id and has a check). Later sprints stay as one-line milestones — plan them when reached.
-4. Delegate the rest to the `scribe` agent (haiku) with a brief that contains the facts: fill the `{{placeholders}}` in `CLAUDE.md`, `HANDOFF.md`, `docs/DECISIONS.md`; add a type-appropriate `.gitignore`; for hardware projects create `docs/WIRING.md` (iot-engineer format). Then check its diff.
+4. Delegate the rest to the `scribe` agent (haiku) with a brief that contains the facts: fill the `{{placeholders}}` in `CLAUDE.md`, `HANDOFF.md`, `docs/DECISIONS.md`; add a type-appropriate `.gitignore`; for hardware projects create `docs/WIRING.md` (iot-engineer format); fill `docs/TOOLCHAIN.md` with every tool the stack needs. Then check its diff.
+   Also have it register the project: if `~/.claude/workspace-registry.txt` exists, run the `shreyas-workspace-replicate:log-tool` skill for the new project and its tools.
 5. Show the owner a ≤15-line summary: what v1 is, what is out of scope, sprint 1 tasks, stack, where it runs. Ask: **"Green flag to build?"** Apply corrections to SPEC first.
 
 ## Phase 5 — Where it runs
@@ -89,7 +91,7 @@ To run unattended, give the owner this line to paste (a model cannot type slash 
 
 `/goal` = keep working until a condition is true → use it for building.
 `/loop` = repeat on a timer → use it only for polling (CI, a long deploy, a soak test).
-If `/goal` is unavailable in that session, the owner types: `Follow docs/WORKFLOW.md and run the loop until the next checkpoint.`
+If `/goal` is unavailable in that session, the owner types `/sprint` (a skill the scaffold puts in the repo, so it also works in cloud sessions).
 
 One goal per sprint. At the checkpoint the owner tests, gives feedback, and pastes the line again.
 
@@ -99,3 +101,5 @@ One goal per sprint. At the checkpoint the owner tests, gives feedback, and past
 - Ask the owner only at: sprint checkpoints, something you cannot test (hardware, real accounts, visual taste), spending money, first production deploy, deleting data, or a spec gap that blocks every remaining task.
 - Reuse before writing: framework built-ins and well-known libraries first.
 - Never send secrets or employer/client code to free models (opencode free tier, omniroute free providers).
+- Before spawning a free model, pick it for the task with `<root>/references/free-models.md` — never a random or habitual pick.
+- Nothing gets installed untracked: every tool, SDK, global package, driver, CLI, MCP server or skill installed for the project goes into `docs/TOOLCHAIN.md` and the workspace registry in the same session (cheap subagent does the edit).

@@ -13,11 +13,18 @@ npx skills add https://github.com/microsoft/playwright-cli --skill playwright-cl
 npx skills add https://github.com/OthmanAdi/planning-with-files --skill planning-with-files
 npx skills add https://github.com/nextlevelbuilder/ui-ux-pro-max-skill --skill ui-ux-pro-max
 npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill gitcp
-npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill new-project
-npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill iot-engineer
 ```
 
 Requires Node.js ≥ 18 (`npx`). Verify with `npx skills list`.
+
+## Plugins
+
+```bash
+claude plugin marketplace add The-Shreyas-M/Shreyas-AI-Skills
+claude plugin install new-project@shreyas-skills --scope user
+claude plugin install iot-engineer@shreyas-skills --scope user
+claude plugin install shreyas-workspace-replicate@shreyas-skills --scope user
+```
 
 ## What each skill does
 
@@ -31,8 +38,6 @@ Requires Node.js ≥ 18 (`npx`). Verify with `npx skills list`.
 - **planning-with-files** — file-based planning for multi-step agent work
 - **ui-ux-pro-max** — UI/UX design intelligence: palettes, fonts, guidelines
 - **gitcp** — commit/push to the right GitHub account (personal vs college): auto-detects from the repo remote, asks only when unsure, uses per-command tokens instead of switching `gh` globally
-- **new-project** — /new-project: interview → spec → repo scaffold (CLAUDE.md, SPEC, TODO, HANDOFF, WORKFLOW, cheap subagents) → agile sprint build loop with an orchestrator that delegates to free/cheap models.
-- **iot-engineer** — /iot-engineer: electronics + ESP32/ESP-IDF method — start a firmware stack from scratch, wiring tables, hardware/protocol debugging, gotchas catalogue.
 
 ## Making skills show up in Claude Code
 

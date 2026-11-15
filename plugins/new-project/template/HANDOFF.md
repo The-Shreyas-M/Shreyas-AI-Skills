@@ -8,7 +8,7 @@ Keep under 60 lines. Replace old content; git keeps the history.
 /goal Every task in the current sprint of TODO.md is ticked with evidence and the sprint's Done-when checks pass in shown output, or a CHECKPOINT or BLOCKED entry for the owner is at the top of HANDOFF.md. Stop after 60 turns.
 ```
 
-If `/goal` is not available: `Follow docs/WORKFLOW.md and run the loop until the next checkpoint.`
+If `/goal` is not available: type `/sprint` (this repo's own skill — works in cloud sessions too).
 
 ## State ({{date}})
 

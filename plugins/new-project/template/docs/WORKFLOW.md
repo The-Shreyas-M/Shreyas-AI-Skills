@@ -26,7 +26,7 @@ Sprint end: run every Done-when check → update `HANDOFF.md` → write a **CHEC
 
 | Tier | Use for | How |
 |---|---|---|
-| 0 Free (local sessions only) | Boilerplate, mechanical edits across files, renames, simple tests, docs, well-specified single-file code | `opencode run -m opencode/big-pickle --auto -f brief.md "Do the task in brief.md"` from the project folder (Bash tool). If the model is gone: `opencode models` and pick another `-free` one. |
+| 0 Free (local sessions only) | Boilerplate, mechanical edits across files, renames, simple tests, docs, well-specified single-file code | `opencode run -m <model> --auto -f brief.md "Do the task in brief.md"` from the project folder (Bash tool). **Choose `<model>` for the task** — see "Picking a free model" below. |
 | 1 Haiku | Finding things in the code, running builds/tests and summarising the log, doc upkeep | `scout` or `scribe` agent |
 | 2 Sonnet | Implementing a feature or fix from a clear brief | `builder` agent |
 | 3 You (or an agent on your own model) | Architecture, interfaces between modules, debugging after a lower tier failed, reviewing diffs, anything ambiguous | do it directly |
@@ -37,6 +37,44 @@ Rules:
 - **Escalate on failure:** a tier fails its check twice → move the task one tier up with the failure output. Tier 3 fails twice → write BLOCKED in `HANDOFF.md` with the evidence and take the next independent task.
 - Free tier: never for secrets, never for employer or client code (see `CLAUDE.md` → Confidential). In cloud sessions tier 0 does not exist; start at tier 1.
 - Do not read a subagent's transcript or have it paste files back. Ask for a report of at most 150 words: what changed, the check it ran, the result, anything odd.
+
+### Picking a free model (tier 0)
+
+Run `opencode models` and choose by what the task needs — never by habit:
+
+| Task needs | Pick |
+|---|---|
+| To look at an image (screenshot, UI check, photo of a board or schematic) | a model whose name contains `vl` or `vision`. None available → use haiku (it can see images). A text-only model such as `big-pickle` cannot do this. |
+| Writing or changing code | the strongest general coding model in the list (`opencode/big-pickle` at the time of writing) |
+| Mechanical edits, docs, renames, formatting | a fast one (`flash`, `lightning`, `small` in the name) |
+| A model you have not used before | give it one tiny task first and check the result before trusting it with real work |
+
+Rate-limited or quota error (429, "limit", "quota") → retry once with another free model of the same kind, then fall back to the omniroute gateway if it is set up (`opencode run -m omniroute/<combo> ...`; start it first if nothing answers on its port), then to haiku. Do not burn turns retrying a depleted model.
+
+### Free models need exact briefs — or do not use them
+
+Free models do good work on exact instructions and poor work on vague ones. Use tier 0 **only** when you can write all of this; otherwise give the task to haiku or sonnet:
+
+```
+TASK: <one sentence>
+EDIT ONLY: <exact file paths>            DO NOT TOUCH: anything else
+STEPS:
+1. <exact change: which function/section, what to add or replace>
+2. ...
+PATTERN TO COPY: <path + the 5–20 lines to imitate, pasted in>
+EXACT NAMES: <identifiers, signatures, types, strings to use verbatim>
+DONE WHEN: `<command>` prints `<expected output>`
+DO NOT: add features, rename things, change formatting elsewhere, install packages, commit
+REPLY WITH: files changed + the DONE WHEN output. Nothing else.
+```
+
+- One small outcome per run (one file or one repeated mechanical change). No design decisions, no "figure out", no debugging, no multi-file features.
+- You must be able to check the result with a command or a 10-second diff read. Always run the DONE WHEN check and `git diff --stat` yourself.
+- First failure → fix the brief once if it was unclear; second failure → move the task up a tier. Do not iterate on a free model.
+
+### Toolchain log
+
+Whenever a task installs or first uses a tool, SDK, global package, driver, CLI, MCP server or skill: `scribe` adds the row to `docs/TOOLCHAIN.md` (name, version, install command, why) in the same sprint, and — in local sessions where `~/.claude/workspace-registry.txt` exists — records it in the workspace registry with the `shreyas-workspace-replicate:log-tool` skill. Nothing is installed untracked. In cloud sessions only `docs/TOOLCHAIN.md` is updated; the backup skill collects it later.
 
 ### Brief format (every delegation)
 

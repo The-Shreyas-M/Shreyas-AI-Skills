@@ -33,10 +33,26 @@ My own skills in this repo:
 | `ai-video` | the ONE command for all video work: asks what you have and want, routes to the right tool (Shorts, long-video clips, faceless reels, launch videos, posting). Full public toolkit with one-click installer: https://github.com/The-Shreyas-M/ai-video-editor |
 | `clip-video` | third-party (Devini Community Edition 1.0, MIT, based on Plextrang/Claude-Video-Clipper): long video or YouTube URL to vertical shorts; AI picks the moments, face-tracked 9:16 reframing, word captions, zooms, SFX. Run `python install.py` inside the skill folder once (`npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill clip-video`) |
 | `ai-video-studio` | the "AI Video Editor" workspace for any chat: drop videos in a folder, a subagent edits them (using shorts-from-main-video / clip-video), you approve, then a safe ledger-based poster schedules them on YouTube (official API) / Instagram (optional) / manual packs; `scripts/setup_workspace.py` rebuilds the folder on a new PC (`npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill ai-video-studio`) |
-| `new-project` | /new-project: interview → spec → repo scaffold (CLAUDE.md, SPEC, TODO, HANDOFF, WORKFLOW, cheap subagents) → agile sprint build loop with an orchestrator that delegates to free/cheap models. (`npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill new-project`) |
-| `iot-engineer` | /iot-engineer: electronics + ESP32/ESP-IDF method — start a firmware stack from scratch, wiring tables, hardware/protocol debugging, gotchas catalogue. (`npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill iot-engineer`) |
-
 Requires Node.js ≥ 18. Verify with `npx skills list`.
+
+## Plugins (namespaced commands)
+
+`new-project`, `iot-engineer` and `shreyas-workspace-replicate` are Claude Code plugins in this repo. Install (once per machine):
+
+```bash
+claude plugin marketplace add The-Shreyas-M/Shreyas-AI-Skills
+claude plugin install new-project@shreyas-skills --scope user
+claude plugin install iot-engineer@shreyas-skills --scope user
+claude plugin install shreyas-workspace-replicate@shreyas-skills --scope user
+```
+
+| Plugin | Commands |
+|---|---|
+| new-project | `/new-project:start` (asks type), `:iot-hardware`, `:web-app`, `:local-app`, `:adopt` (bring an existing repo under the workflow), `:continue` (resume or run the next sprint) |
+| iot-engineer | `/iot-engineer:start`, `:prototype-designer`, `:breadboard-circuit-designer`, `:pcb-designer`, `:schematic-review`, `:firmware-esp-idf`, `:firmware-arduino`, `:board-bringup`, `:debug` |
+| shreyas-workspace-replicate | `/shreyas-workspace-replicate:setup` (rebuild the workspace on a new machine), `:backup` (force-record everything before switching machines), `:log-tool` (record a newly installed tool) |
+
+Projects scaffolded by new-project carry their own `/sprint` skill and `docs/WORKFLOW.md`, so the build loop also works in cloud sessions.
 
 ## Repo layout
 

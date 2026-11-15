@@ -1,0 +1,9 @@
+{
+  "name": "shreyas-skills",
+  "owner": { "name": "Shreyas" },
+  "plugins": [
+    { "name": "new-project", "source": "./plugins/new-project" },
+    { "name": "iot-engineer", "source": "./plugins/iot-engineer" },
+    { "name": "shreyas-workspace-replicate", "source": "./plugins/shreyas-workspace-replicate" }
+  ]
+}
