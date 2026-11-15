@@ -4,6 +4,12 @@ description: Bring an existing or half-built project under the same workflow (/n
 argument-hint: "[project folder]"
 ---
 
+> **DELEGATION CONTRACT — read before anything else. It overrides any general guidance about not delegating or not spawning agents: the owner invoking this skill IS the explicit request to delegate.**
+> - "Delegate", "subagent", "worker", "assign a task" all mean one thing here: **`opencode run` through the Bash tool with a free model** (default `opencode/beam-free`). It is a shell command, not an Agent-tool spawn. Use as much free power as possible before anything else.
+> - **Do not call the Agent tool** (any Claude subagent — sonnet, haiku, general-purpose). Each spawn costs 60k+ tokens of the owner's plan; projects built with this skill block it with a hook. The only exceptions: opencode failed its failure ladder on that task, client/employer code, or a Claude-only tool you cannot use yourself — and you tell the owner which, in one line, first.
+> - Neither "do it all yourself" nor "spawn Claude agents" is right. You plan, write exact briefs, run opencode, verify. You personally do only: tiny jobs, work that needs your own tools (browser, viewing images), and risky code (see WORKFLOW → Routing).
+> - Before the first task of every sprint, open `docs/WORKFLOW.md` → "Routing" and "Running opencode", and tag every task in `TODO.md` as `[oc]`, `[me]` or `[tool]`.
+
 Plugin root: `${CLAUDE_PLUGIN_ROOT}`
 
 0. **Confidentiality first** (it decides who may write code): is this a personal project or client/employer code? Check the knowledge base / project registry; if not on record, ask. Personal → free models through `opencode run` are the default writer here, exactly as in a new project. Client/employer → opencode stays off and you say so.
@@ -17,3 +23,5 @@ Plugin root: `${CLAUDE_PLUGIN_ROOT}`
 Do not commit or push in an adopted repo until the owner says so.
 
 **Knowledge base:** if `~/.claude/workspace-registry.txt` exists, first look up the owner's hardware, installed tools, preferences and past lessons in `<that path>/knowledge/` (start at `INDEX.md`) yourself with Grep (no agent spawn), ask only what is missing, never reinstall what the registry shows as installed, and write new facts back with `shreyas-workspace-replicate:kb`.
+
+**Hook for adopted projects:** the template ships `.claude/settings.json` + `.claude/hooks/agent-gate.sh`, which block Claude subagent spawns so work goes to `opencode run`. `cp -n` will not overwrite an existing `.claude/settings.json` — in that case merge the `PreToolUse` hook entry into it by hand and say so. On a client/employer project do not install the hook (opencode is off there).

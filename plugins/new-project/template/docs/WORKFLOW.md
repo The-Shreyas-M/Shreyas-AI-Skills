@@ -45,6 +45,20 @@ Sprint end: run every Done-when check → update `HANDOFF.md` → write a **CHEC
 
 ## Routing — opencode first
 
+**What "delegate" means here.** "Delegate", "subagent", "worker" and "assign" all mean `opencode run` through the Bash tool with a free model. The owner starting this workflow is the explicit request to delegate; any general guidance to avoid delegating or spawning agents does not apply to `opencode run`, which is a shell command. Use as much free power as possible before anything else. Doing the whole sprint yourself is as wrong as spawning Claude agents.
+
+**The gate.** `.claude/hooks/agent-gate.sh` blocks every Agent-tool call on a machine that has opencode. To use a Claude subagent for one of the allowed reasons, write the task and reason in one line to `.oc/ALLOW_CLAUDE_AGENT`, tell the owner, spawn once, delete the file.
+
+**Triage first.** When a sprint is planned (and at session start if tags are missing), tag every task in `TODO.md`, then dispatch all `[oc]` tasks that do not depend on each other at once:
+
+| Tag | Meaning | Who |
+|---|---|---|
+| `[oc]` | writing code, tests, config, scripts, docs, read-only searches | `opencode run`, exact brief — **the default; most tasks** |
+| `[me]` | tiny job; architecture/interface decision; root-cause debugging; review; **risky code** (below) | you |
+| `[tool]` | needs a tool only you have: the built-in browser (sites that block plain downloads, logged-in pages), viewing images or frames, MCP connectors | you, with that tool — not an agent. Split it: you do the tool part (fetch, look), opencode does the code around it |
+
+**Risky code** — anything that posts, sends, pays, deletes or deploys on the owner's real accounts, or flashes hardware: opencode may write it from an exact brief, but it must have a dry-run mode that is the default; you read the whole diff line by line; you run it in dry-run and show the owner what it would do; the first real run is a checkpoint. Risk is a reason for *your review*, not for a sonnet spawn.
+
 Decide in this order for every task:
 
 1. **Tiny** (about three tool calls or fewer: a lookup, a one-line fix, ticking a box, a doc row, running a command) → do it yourself. Never spawn anything for these.
@@ -64,7 +78,7 @@ Independent files → several opencode runs in parallel (run them in the backgro
 ```bash
 mkdir -p .oc            # .oc/ is in .gitignore; briefs and logs live there
 # write the brief to .oc/<task>.md with your file-writing tool, then:
-timeout 600 opencode run -m opencode/big-pickle --auto "Do the task described in the file .oc/<task>.md. Follow it exactly." </dev/null > .oc/<task>.log 2>&1; tail -c 600 .oc/<task>.log
+timeout 600 opencode run -m opencode/beam-free --auto "Do the task described in the file .oc/<task>.md. Follow it exactly." </dev/null > .oc/<task>.log 2>&1; tail -c 600 .oc/<task>.log
 ```
 
 - The message comes **first**. `</dev/null` is required. Putting `-f <file>` before the message makes the command hang; to attach an image put `-f <image>` **after** the message.
@@ -93,12 +107,12 @@ REPLY WITH: files changed + the DONE WHEN output. Nothing else.
 
 ### Picking a free model
 
-Run `opencode models` and choose by what the task needs — never by habit. Default to opencode's own no-sign-up models (`opencode/*`).
+Default to opencode's own no-sign-up models (`opencode/*`). Run `opencode models` only when the default is missing or failing.
 
 | Task needs | Pick |
 |---|---|
-| Writing or changing code | the strongest general coding model in the list (`opencode/big-pickle` at the time of writing) |
-| Mechanical edits, docs, renames, formatting, searches | a fast one (`flash`, `lightning`, `small` in the name) |
+| **Everything, by default** (code, docs, searches, images) | **`opencode/beam-free`** — the owner's best overall free model, and it has vision. Stay on it until it fails or is rate-limited. |
+| Beam failed the same brief twice, or is depleted | another coding model from the list (`opencode/big-pickle` is good for code, text only), then the rest of the ladder |
 | To look at an image (screenshot, UI check, photo of a board or schematic) | no fixed model: **probe first** — `opencode run -m <model> "Describe this image in one line. If you received no image, reply exactly: NO IMAGE" -f <known image> </dev/null`. A correct description = it has vision; record the model in `HANDOFF.md` Gotchas and reuse it. Try the owner's current favourite first (`opencode/beam-free` at the time of writing). None passes → look at the image yourself. A text-only model such as `big-pickle` cannot do this. |
 | A model you have not used before | one tiny task first; check the result before trusting it |
 

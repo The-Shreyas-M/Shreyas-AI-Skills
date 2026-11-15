@@ -6,7 +6,7 @@
 
 ## Start here (every session)
 
-1. Read `docs/WORKFLOW.md` — the build method. Follow it exactly.
+1. Read `docs/WORKFLOW.md` — the build method. Follow it exactly. **Workers are free models through `opencode run` (default `opencode/beam-free`); that is what "delegate" and "subagent" mean in this project. The Agent tool (Claude subagents) is blocked by a hook except for the three exceptions in WORKFLOW → Routing.**
 2. Read `HANDOFF.md`, then `TODO.md`. Continue from **Next step**.
 3. `docs/SPEC.md` is the source of truth for what to build. Nothing outside it gets built.
 

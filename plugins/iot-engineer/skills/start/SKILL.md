@@ -72,3 +72,5 @@ Every Claude subagent spawn (haiku or sonnet) costs 60k+ tokens of the owner's p
 - Stop for the owner only for hands or eyes: wiring, flashing, measuring, looking. Batch into one numbered bench list (do → report) per sprint; log results in `tests/BENCH_LOG.md`.
 - New root cause found → add one line (symptom → cause → fix) to this plugin's `references/gotchas.md` in the local clone of the skills repo (`claude plugin marketplace list` shows its path) and push it.
 - New tool or toolchain installed → log it (`shreyas-workspace-replicate:log-tool`).
+
+**Workers:** "delegate" and "subagent" in this plugin mean `opencode run` through the Bash tool (default model `opencode/beam-free`, which also has vision), with the exact brief and tested command from the project `docs/WORKFLOW.md`. Do not call the Agent tool for hardware projects that are personal; the owner invoking this skill is the request to delegate to free models. Work that needs your own tools (viewing a board photo, the browser for a datasheet site) you do yourself; flashing and anything that can damage hardware is reviewed by you and is a checkpoint.

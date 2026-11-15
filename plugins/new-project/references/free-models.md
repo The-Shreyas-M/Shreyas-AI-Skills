@@ -7,7 +7,7 @@ Free tiers change weekly. **Always run `opencode models` first** and choose from
 | The task needs | Choose | Why |
 |---|---|---|
 | To see an image (screenshot, UI check, board/schematic photo, chart) | **no fixed model — probe first** (see "Vision check"). Start with the model the owner has had good results with lately (`opencode/beam-free` at the time of writing), then others. None passes → haiku. | names do not reliably say which models can see; text-only models silently ignore or invent image content |
-| Writing or changing code from a brief | the strongest general coding model (then: `opencode/big-pickle`) — **text only, not a vision model** | best quality of the free set |
+| Writing or changing code from a brief | the strongest general coding model (`opencode/beam-free` is the default for everything until it fails; `opencode/big-pickle` is a text-only fallback) | best quality of the free set |
 | Mechanical edits, docs, tables, renames, formatting | a fast small one (`flash`, `lightning`, `small` in the name) | cheap on the shared free quota, quick |
 | Long files or many files in one go | prefer a model advertised for long context; else split the task | free models truncate silently |
 | A model not used before | one tiny probe task first; check the output | names say little about quality |
