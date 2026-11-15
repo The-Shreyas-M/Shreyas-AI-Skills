@@ -37,20 +37,20 @@ Requires Node.js ≥ 18. Verify with `npx skills list`.
 
 ## Plugins (namespaced commands)
 
-`new-project`, `iot-engineer` and `shreyas-workspace-replicate` are Claude Code plugins in this repo. Install (once per machine):
+`new-project` and `iot-engineer` are Claude Code plugins in this repo. Install (once per machine):
 
 ```bash
 claude plugin marketplace add The-Shreyas-M/Shreyas-AI-Skills
 claude plugin install new-project@shreyas-skills --scope user
 claude plugin install iot-engineer@shreyas-skills --scope user
-claude plugin install shreyas-workspace-replicate@shreyas-skills --scope user
 ```
 
 | Plugin | Commands |
 |---|---|
 | new-project | `/new-project:start` (asks type), `:iot-hardware`, `:web-app`, `:local-app`, `:adopt` (bring an existing repo under the workflow), `:continue` (resume or run the next sprint) |
 | iot-engineer | `/iot-engineer:start`, `:prototype-designer`, `:breadboard-circuit-designer`, `:pcb-designer`, `:schematic-review`, `:firmware-esp-idf`, `:firmware-arduino`, `:board-bringup`, `:debug` |
-| shreyas-workspace-replicate | `/shreyas-workspace-replicate:setup` (rebuild the workspace on a new machine), `:backup` (force-record everything before switching machines), `:log-tool` (record a newly installed tool) |
+
+The workspace-replicate plugin and its registry live in a separate private repo.
 
 Projects scaffolded by new-project carry their own `/sprint` skill and `docs/WORKFLOW.md`, so the build loop also works in cloud sessions.
 

@@ -53,7 +53,7 @@ You (main model) own: architecture, module interfaces (public headers), pin/part
 | Find things in code; run a build and return the first real error; summarise a long serial log; pull a pin table, register or timing value from a datasheet PDF | haiku |
 | Implement one module from a header you wrote; host tests; simulators and bench scripts; a web page for an existing API; BOM lookup of alternates | sonnet |
 | Kconfig menus, CMake files, doc tables, boilerplate copied from an existing pattern | free model via `opencode run` (personal projects only; pick the model for the task) or haiku |
-| Judging a photo of a board, a scope shot or a schematic image | a vision-capable model only (haiku or better; a free model only if it is a vision model) |
+| Judging a photo of a board, a scope shot or a schematic image | a vision-capable model only (haiku or better; a free model only after it passes a vision probe with a known image) |
 | Docs: `HANDOFF.md`, `WIRING.md`, `PENDING.md`, `TOOLCHAIN.md` | haiku — then grep identifiers and read the prose once |
 
 - **Header-first contract:** you write the public header with full comments; the subagent implements against it and may not change it.
@@ -66,5 +66,5 @@ You (main model) own: architecture, module interfaces (public headers), pin/part
 ## 5. Checkpoints and memory
 
 - Stop for the owner only for hands or eyes: wiring, flashing, measuring, looking. Batch into one numbered bench list (do → report) per sprint; log results in `tests/BENCH_LOG.md`.
-- New root cause found → add one line (symptom → cause → fix) to `references/gotchas.md` in the skills repo (path in `~/.claude/workspace-registry.txt`).
+- New root cause found → add one line (symptom → cause → fix) to this plugin's `references/gotchas.md` in the local clone of the skills repo (`claude plugin marketplace list` shows its path) and push it.
 - New tool or toolchain installed → log it (`shreyas-workspace-replicate:log-tool`).

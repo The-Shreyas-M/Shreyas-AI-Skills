@@ -44,12 +44,12 @@ Run `opencode models` and choose by what the task needs — never by habit:
 
 | Task needs | Pick |
 |---|---|
-| To look at an image (screenshot, UI check, photo of a board or schematic) | a model whose name contains `vl` or `vision`. None available → use haiku (it can see images). A text-only model such as `big-pickle` cannot do this. |
+| To look at an image (screenshot, UI check, photo of a board or schematic) | no fixed model: **probe first** — `opencode run -m <model> -f <known image> "Describe this image in one line. If you received no image, reply exactly: NO IMAGE"`. A correct description = it has vision; record the model in `HANDOFF.md` Gotchas and reuse it. Try the owner's current favourite first (`opencode/beam-free` at the time of writing). None passes → haiku. A text-only model such as `big-pickle` cannot do this. |
 | Writing or changing code | the strongest general coding model in the list (`opencode/big-pickle` at the time of writing) |
 | Mechanical edits, docs, renames, formatting | a fast one (`flash`, `lightning`, `small` in the name) |
 | A model you have not used before | give it one tiny task first and check the result before trusting it with real work |
 
-Rate-limited or quota error (429, "limit", "quota") → retry once with another free model of the same kind, then fall back to the omniroute gateway if it is set up (`opencode run -m omniroute/<combo> ...`; start it first if nothing answers on its port), then to haiku. Do not burn turns retrying a depleted model.
+Rate-limited or quota error (429, "limit", "quota") → try two or three other `opencode/*` free models of the same kind (these no-sign-up models are the default; avoid omniroute in normal work). Only if all are depleted and the task should stay free, use the omniroute gateway (`opencode run -m omniroute/<combo> ...`; start it first if nothing answers on its port). Otherwise haiku. Do not burn turns retrying a depleted model.
 
 ### Free models need exact briefs — or do not use them
 

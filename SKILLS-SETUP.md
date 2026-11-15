@@ -23,7 +23,6 @@ Requires Node.js ≥ 18 (`npx`). Verify with `npx skills list`.
 claude plugin marketplace add The-Shreyas-M/Shreyas-AI-Skills
 claude plugin install new-project@shreyas-skills --scope user
 claude plugin install iot-engineer@shreyas-skills --scope user
-claude plugin install shreyas-workspace-replicate@shreyas-skills --scope user
 ```
 
 ## What each skill does

@@ -6,13 +6,23 @@ Free tiers change weekly. **Always run `opencode models` first** and choose from
 
 | The task needs | Choose | Why |
 |---|---|---|
-| To see an image (screenshot, UI check, board/schematic photo, chart) | a model with `vl` or `vision` in its name (then: `opencode/nemotron-3.5-super-vl-free`). None listed → haiku. | text-only models silently ignore or invent image content |
+| To see an image (screenshot, UI check, board/schematic photo, chart) | **no fixed model — probe first** (see "Vision check"). Start with the model the owner has had good results with lately (`opencode/beam-free` at the time of writing), then others. None passes → haiku. | names do not reliably say which models can see; text-only models silently ignore or invent image content |
 | Writing or changing code from a brief | the strongest general coding model (then: `opencode/big-pickle`) — **text only, not a vision model** | best quality of the free set |
 | Mechanical edits, docs, tables, renames, formatting | a fast small one (`flash`, `lightning`, `small` in the name) | cheap on the shared free quota, quick |
 | Long files or many files in one go | prefer a model advertised for long context; else split the task | free models truncate silently |
 | A model not used before | one tiny probe task first; check the output | names say little about quality |
 
-If unsure whether a model can see images: send it a small known image and ask what it shows. Wrong or vague answer → it is not a vision model.
+## Vision check (before any image task)
+
+Do not assume from the name, and do not just ask "can you see images?" — models answer yes wrongly. Test it:
+
+```bash
+opencode run -m <model> -f <a small image whose content you know> "Describe this image in one line. If you received no image, reply exactly: NO IMAGE"
+```
+
+- Correct, specific description → it has vision; use it for this session's image tasks and note it in `HANDOFF.md` → Gotchas (`vision-capable free model: <name>, checked <date>`), so the next session does not re-probe.
+- `NO IMAGE`, an error, or a vague/wrong description → not usable for images; try the next model.
+- Re-probe when the note is more than a few days old or the model list changed.
 
 ## Invocation
 
@@ -24,8 +34,10 @@ cd <project> && opencode run -m <provider/model> --auto -f brief.md "Do the task
 
 Signs: HTTP 429, "Free usage limit reached", "quota", "Model is unavailable".
 
-1. Try one other free model of the same kind from `opencode models`.
-2. Try the omniroute gateway (cycles across its keyless pool by itself):
+Default is always opencode's own no-sign-up models (`opencode/*`). Avoid routing through omniroute in normal work.
+
+1. Try two or three other `opencode/*` free models of the same kind from `opencode models`.
+2. Only when every suitable `opencode/*` model is depleted and the task really should stay free — the omniroute gateway (cycles across its keyless pool by itself):
    ```bash
    omniroute serve --daemon --no-open --no-tray      # only if nothing answers on port 20128
    opencode run -m omniroute/auto/best-coding --auto -f brief.md "Do the task in brief.md"
