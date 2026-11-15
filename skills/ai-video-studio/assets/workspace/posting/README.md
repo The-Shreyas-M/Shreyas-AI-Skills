@@ -15,6 +15,14 @@
 ## Accounts (several channels / Instagram accounts)
 Copy `accounts.json.example` to `accounts.json` and name each account (`my-channel`, `second-yt`, `main-ig`...). Each YouTube account has its own `token_file` and `expected_channel`; log each in once with `post.py auth --account NAME` (pick that channel in Google's account picker), then `post.py whoami --account NAME` and paste the exact title into `expected_channel`. Instagram accounts read their login from `.env` variables you name (`IG_USER_MAIN`, `IG_PASS_MAIN`). Every queue item lists `accounts`; a video can go to several accounts, each tracked separately in the ledger. `post.py accounts` lists them. The worker must ASK which account(s) to use whenever it is not obvious.
 
+## Related video (Shorts clipped from a main video)
+When a Short is clipped from a main video, link them: queue it with `--related <main video's queue id | youtu.be URL | video id>` (CSV column `related`; a queue id is resolved from the ledger once the main video is uploaded, so the main video must go up first: a Short whose target is not uploaded yet is skipped with `[WAIT]`).
+What happens:
+1. The poster appends `Full video: https://youtu.be/<id>` to the Short's description (the part the API allows).
+2. YouTube's own **Related video** field (Studio -> Details -> Related video) can only be set in YouTube Studio: the public Data API does not expose it. `post.py related` prints a ready checklist (Studio edit link + the main video link for each uploaded Short) and saves it to `Exports/_related-todo.md`. It takes about 10 seconds per Short.
+3. Optional shortcut: with the owner's explicit OK, a Claude session driving the owner's logged-in browser (Claude in Chrome or the built-in browser) can open each Studio link from the checklist and set the field. Use the browser only for this edit, never to upload, and confirm the channel and the video before saving.
+The destination must be a public or unlisted video on the SAME channel.
+
 ## Instagram Trial Reels (discovery, on by default)
 Every Instagram reel is uploaded as a **Trial Reel** (`clip_upload(trial=True)` in instagrapi: `trial_params={"graduation_strategy": "manual"}`, not shown in the main feed). Trial Reels are shown to people who do NOT follow you, so they are for discovery; you decide in Instagram whether to share one with your followers afterwards. Before the first upload the poster calls `clip_trial_eligible()`: if the account is not eligible (it needs a professional account with Trial Reels enabled) it HALTS and posts nothing, instead of silently publishing a normal reel. Opt out per account (`"trial": false` in `accounts.json`) or per queue item (`"trial": false`). Caveats: this uses Instagram's private API (not documented), Instagram may reject a trial reel at publish time (the run halts as AMBIGUOUS, check the app before retrying), and whether scheduling a trial reel is honoured is not guaranteed: check the first one in the app.
 

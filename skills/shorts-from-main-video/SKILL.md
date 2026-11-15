@@ -97,6 +97,8 @@ Work files go in `_work_<name>/` (delete after).
 
 ## 8. Post (give the creator this)
 
+Shorts clipped from a main video must point to it: set **Related video** (Studio -> Details) to the main video, and put its link in the description. With `ai-video-studio`'s poster: `--related <main video>`, then `post.py related` for the Studio checklist.
+
 One Short per day after the main video. Title = the hook in plain words ("My first avatar failed"). Description: one sentence + `#shorts` + 3 tags + link. Pin a comment with the main video / product link. Save titles and descriptions for all videos in one md file next to the videos.
 
 ## Gotchas that cost time before

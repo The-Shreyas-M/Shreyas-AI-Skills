@@ -15,6 +15,8 @@ Commands (workspace python, run from anywhere):
   post.py whoami --account NAME             print the YouTube channel that account's token controls
   post.py add <video> --accounts a,b --title T --description D [--tags a,b] --when "2026-11-20 19:30"
   post.py import schedule.csv [--start 2026-11-20 --times 07:30,19:30 --per-day 2]   bulk add (40 clips etc.)
+  post.py add ... --related <main-video id|url>   link a clipped Short to its main video (description link + Studio checklist)
+  post.py related                           checklist of Studio edit links to set "Related video" (API cannot)
   post.py approve <id|all>                  mark as watched + confirmed by the owner
   post.py plan                              validate queue (no network)
   post.py run --account NAME [--max N] [--execute]
@@ -229,6 +231,21 @@ def yt_uploads(yt):
             return out
 
 
+def related_id(c, name, it):
+    """YouTube video id of the item's `related` target (a queue id already uploaded by this account, a youtu.be/watch/shorts URL, or an 11-char id)."""
+    r = (it.get("related") or "").strip()
+    if not r:
+        return None
+    m = re.search(r"(?:youtu\.be/|v=|shorts/)([\w-]{11})", r)
+    if m:
+        return m.group(1)
+    row = c.execute("SELECT remote_id FROM jobs WHERE platform=? AND key=? AND state='DONE' AND remote_id IS NOT NULL", (name, r)).fetchone()
+    if row:
+        return row[0]
+    ids = {i["id"] for i in load_queue()["items"]}
+    return r if re.fullmatch(r"[\w-]{11}", r) and r not in ids else None
+
+
 def http_reason(e):
     try:
         return json.loads(e.content.decode())["error"]["errors"][0]["reason"]
@@ -272,9 +289,16 @@ def yt_run(items, c, maxn, execute, name):
         if when - datetime.now(tz()) < YT_MIN_LEAD:
             print(f"[SKIP] {it['id']}: slot {when:%d %b %H:%M} is past or less than 15 min away")
             continue
+        rid = related_id(c, name, it)
+        if it.get("related") and not rid:
+            print(f"[WAIT] {it['id']}: related video '{it['related']}' is not uploaded yet. Upload the main video first (it is skipped for now).")
+            continue
+        desc = it.get("description", "")
+        if rid and f"youtu.be/{rid}" not in desc:  # API fallback: YouTube's "Related video" field itself is Studio-only
+            desc = desc.rstrip() + f"\n\nFull video: https://youtu.be/{rid}"
         publish = when.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         tags = [t.lstrip("#") for t in (it.get("tags") or re.findall(r"#\w+", it.get("description", "")))][:15]
-        body = {"snippet": {"title": it["title"], "description": it.get("description", ""), "tags": tags,
+        body = {"snippet": {"title": it["title"], "description": desc, "tags": tags,
                             "categoryId": it.get("category", "22"), "defaultLanguage": "en"},
                 "status": {"privacyStatus": "private", "publishAt": publish, "selfDeclaredMadeForKids": False}}
         if it.get("synthetic"):  # YouTube altered/synthetic-content disclosure
@@ -310,8 +334,8 @@ def yt_run(items, c, maxn, execute, name):
             setstate(c, name, it, "AMBIGUOUS", note=type(e).__name__)
             print(f"   HALT: {type(e).__name__}: {e}")
             return done
-        setstate(c, name, it, "DONE", remote_id=vid)
-        print(f"   uploaded + scheduled: https://youtu.be/{vid}")
+        setstate(c, name, it, "DONE", remote_id=vid, note=f"related={rid}" if rid else None)
+        print(f"   uploaded + scheduled: https://youtu.be/{vid}" + (f"  (full video linked in description; set Studio Related video: post.py related)" if rid else ""))
         if it.get("thumbnail"):
             try:
                 yt.thumbnails().set(videoId=vid, media_body=MediaFileUpload(str(WS / it["thumbnail"]))).execute()
@@ -430,6 +454,7 @@ def main():
     a.add_argument("--tags", default="")
     a.add_argument("--when", required=True, help='"YYYY-MM-DD HH:MM" in the queue timezone')
     a.add_argument("--thumb")
+    a.add_argument("--related", help="queue id or YouTube URL/id of the MAIN video this Short was clipped from (Studio 'Related video')")
     a.add_argument("--synthetic", action="store_true", help="mark as AI-generated/synthetic (YouTube disclosure flag)")
     im = sub.add_parser("import", help="bulk-add from a CSV (see README)")
     im.add_argument("csv")
@@ -443,6 +468,7 @@ def main():
     r.add_argument("--max", type=int, default=3)
     r.add_argument("--execute", action="store_true")
     r.add_argument("--only", default="")
+    sub.add_parser("related", help="checklist: set Studio's Related video on uploaded Shorts (not available in the API)")
     k = sub.add_parser("pack")
     k.add_argument("id")
     args = ap.parse_args()
@@ -472,7 +498,7 @@ def main():
         p = Path(args.video).resolve()
         it = {"id": args.id or slug(p), "file": rel(p), "accounts": [x.strip() for x in args.accounts.split(",")],
               "title": args.title, "description": args.description, "tags": [t for t in args.tags.split(",") if t],
-              "when": args.when, "approved": False, "thumbnail": args.thumb, "synthetic": args.synthetic}
+              "when": args.when, "approved": False, "thumbnail": args.thumb, "synthetic": args.synthetic, "related": args.related}
         for n in it["accounts"]:
             acct(n)
         q["items"] = [i for i in q["items"] if i["id"] != it["id"]] + [it]
@@ -497,7 +523,8 @@ def main():
                   "tags": [t.strip() for t in (r_.get("tags") or "").split(";") if t.strip()],
                   "when": (r_.get("when") or "").strip() or next(slots), "approved": False,
                   "thumbnail": (r_.get("thumbnail") or None), "ig_caption": (r_.get("ig_caption") or None),
-                  "synthetic": (r_.get("synthetic") or "").strip().lower() in ("1", "true", "yes")}
+                  "synthetic": (r_.get("synthetic") or "").strip().lower() in ("1", "true", "yes"),
+                  "related": (r_.get("related") or "").strip() or None}
             q["items"] = [i for i in q["items"] if i["id"] != it["id"]] + [it]
             n += 1
         save_queue(q)
@@ -531,6 +558,27 @@ def main():
             fn = yt_run if kind(args.account) == "yt" else ig_run
             n = fn(selected(q, args.account, only), c, args.max, args.execute, args.account)
         print(f"{'executed' if args.execute else 'dry-run'}: {n} job(s)")
+    elif args.cmd == "related":
+        c = db()
+        lines = ["# Set 'Related video' in YouTube Studio (the API cannot set it)", "",
+                 "For each Short: open its Studio link, Details tab -> Related video -> pick the main video, Save.", ""]
+        n = 0
+        for it in q["items"]:
+            if not it.get("related"):
+                continue
+            for acc, v in accounts().items():
+                if v["platform"] != "yt":
+                    continue
+                row = c.execute("SELECT remote_id FROM jobs WHERE platform=? AND key=? AND state='DONE' AND remote_id IS NOT NULL", (acc, it["id"])).fetchone()
+                rid = related_id(c, acc, it)
+                if row and rid:
+                    n += 1
+                    lines.append(f"- [ ] **{it['title']}**  ({acc})\n  edit: https://studio.youtube.com/video/{row[0]}/edit\n  related video -> https://youtu.be/{rid}")
+        out = WS / "Exports" / "_related-todo.md"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        print("\n".join(lines) if n else "nothing to do: no uploaded Shorts with a `related` target (add --related <main-video id> when queueing).")
+        print(f"\nchecklist saved: {out}")
     elif args.cmd == "pack":
         it = next(i for i in q["items"] if i["id"] == args.id)
         out = WS / "Exports" / "_manual" / it["id"]
