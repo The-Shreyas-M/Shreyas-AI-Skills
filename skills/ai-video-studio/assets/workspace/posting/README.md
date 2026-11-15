@@ -10,10 +10,13 @@
    - Run `Tools\.venv\Scripts\python.exe posting\post.py auth --account my-channel` and log in with the **channel you want to post to**. Choose the right brand-channel in the Google account picker.
    - Run `post.py whoami --account my-channel`, then set `expected_channel` in `accounts.json` to that exact channel title. Posting halts if they ever differ.
    - YouTube API note: videos uploaded through an unverified API project may be forced private. If so, request an audit or upload through Studio. Per-channel upload limits apply (about 100 a day was observed); the run stops cleanly when hit.
-3. Instagram (optional, unofficial `instagrapi`, risk of action blocks: keep to a few reels a day): put IG_USERNAME / IG_PASSWORD in `.env` yourself.
+3. Instagram (optional, unofficial `instagrapi` >= 3.2, risk of action blocks: keep to a few reels a day): put IG_USERNAME / IG_PASSWORD in `.env` yourself.
 
 ## Accounts (several channels / Instagram accounts)
 Copy `accounts.json.example` to `accounts.json` and name each account (`my-channel`, `second-yt`, `main-ig`...). Each YouTube account has its own `token_file` and `expected_channel`; log each in once with `post.py auth --account NAME` (pick that channel in Google's account picker), then `post.py whoami --account NAME` and paste the exact title into `expected_channel`. Instagram accounts read their login from `.env` variables you name (`IG_USER_MAIN`, `IG_PASS_MAIN`). Every queue item lists `accounts`; a video can go to several accounts, each tracked separately in the ledger. `post.py accounts` lists them. The worker must ASK which account(s) to use whenever it is not obvious.
+
+## Instagram Trial Reels (discovery, on by default)
+Every Instagram reel is uploaded as a **Trial Reel** (`clip_upload(trial=True)` in instagrapi: `trial_params={"graduation_strategy": "manual"}`, not shown in the main feed). Trial Reels are shown to people who do NOT follow you, so they are for discovery; you decide in Instagram whether to share one with your followers afterwards. Before the first upload the poster calls `clip_trial_eligible()`: if the account is not eligible (it needs a professional account with Trial Reels enabled) it HALTS and posts nothing, instead of silently publishing a normal reel. Opt out per account (`"trial": false` in `accounts.json`) or per queue item (`"trial": false`). Caveats: this uses Instagram's private API (not documented), Instagram may reject a trial reel at publish time (the run halts as AMBIGUOUS, check the app before retrying), and whether scheduling a trial reel is honoured is not guaranteed: check the first one in the app.
 
 ## Bulk scheduling (40 clips at once)
 Fill `schedule.csv` (see `schedule.csv.example`; columns file, accounts (`a;b`), title, description, tags (`a;b`), when, thumbnail, ig_caption). Rows with an empty `when` are auto-slotted:

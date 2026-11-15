@@ -33,7 +33,7 @@ After the owner approves an edit, **ASK which account(s) each video goes to** (l
 - `post.py plan` -> show the owner the table -> owner watched/confirmed -> `post.py approve <id|all>` -> dry run `post.py run --account NAME --max N` -> `--execute` only on an explicit "go". Repeat per account.
 - Safety design (do not weaken): approved-only, ledger with unique key + claim-before-upload, adopt-existing-by-title, halt on any ambiguous error (never auto-retry), dry-run default, lock file, per-account `expected_channel` check, upload-limit stops cleanly.
 - Never type or print passwords/tokens. `.env`, `token*.json`, `client_secrets.json`, `ig_*.json`, `accounts.json` stay local and git-ignored. The owner creates accounts and does each one-time login (`post.py auth --account NAME`).
-- YouTube = official API (scheduled through `publishAt`, PC need not stay on). Instagram = unofficial `instagrapi` (action-block risk: slow pace, few per day), optional. TikTok/others: `post.py pack <id>` for manual upload.
+- YouTube = official API (scheduled through `publishAt`, PC need not stay on). Instagram = unofficial `instagrapi` (action-block risk: slow pace, few per day), optional; **all Instagram reels go out as Trial Reels** (`trial` default true, non-followers first, halts if the account is not eligible). TikTok/others: `post.py pack <id>` for manual upload.
 
 ## Style
 Read `References/brand-sheet.md` if present. Default house look of the Shorts: split screen (b-roll top, face bottom), word-by-word yellow captions, hook title, progress bar, 1.1x speed, quiet whooshes, ducked calm-phonk music.

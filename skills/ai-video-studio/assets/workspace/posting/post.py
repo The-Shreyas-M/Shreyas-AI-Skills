@@ -337,6 +337,12 @@ def ig_run(items, c, maxn, execute, name):
         cl.load_settings(sess)
     cl.login(os.environ[a.get("username_env", "IG_USERNAME")], os.environ[a.get("password_env", "IG_PASSWORD")])
     cl.dump_settings(sess)
+    import inspect
+    trial_default = a.get("trial", True)  # Instagram TRIAL REELS: shown to non-followers first (discovery), not to your followers
+    grad = a.get("trial_graduation", "manual")
+    if "trial" not in inspect.signature(cl.clip_upload).parameters:
+        sys.exit("HALT: your instagrapi has no Trial Reel support. Upgrade: Tools/.venv pip install -U 'instagrapi>=3.2'")
+    eligible = None
     done = 0
     for it in items:
         st = get(c, name, jid(it))
@@ -349,7 +355,17 @@ def ig_run(items, c, maxn, execute, name):
             print(f"[SKIP] {it['id']}: Instagram needs >= 25 min lead")
             continue
         cap = it.get("ig_caption") or (it.get("title", "") + "\n\n" + it.get("description", ""))
-        print(f"[{done + 1}] {name} {it['id']} | schedule {when:%a %d %b %H:%M}")
+        want_trial = it.get("trial", trial_default)
+        print(f"[{done + 1}] {name} {it['id']} | schedule {when:%a %d %b %H:%M} | {'TRIAL reel (non-followers first)' if want_trial else 'normal reel (shown to followers)'}")
+        if execute and want_trial and eligible is None:
+            try:
+                eligible = bool(cl.clip_trial_eligible())
+            except Exception as e:
+                eligible = False
+                print(f"   could not confirm Trial Reel eligibility: {type(e).__name__}: {e}")
+            if not eligible:
+                sys.exit("HALT: this Instagram account is not eligible for Trial Reels (needs a professional account with the feature enabled). "
+                         "Nothing was posted. Set \"trial\": false in accounts.json only if you really want normal reels.")
         if not execute:
             print("   (dry-run: no upload)")
             done += 1
@@ -358,8 +374,8 @@ def ig_run(items, c, maxn, execute, name):
             continue
         try:
             extra = cl._scheduled_extra_data({}, when)
-            media = cl.clip_upload(path=vpath(it), caption=cap, extra_data=extra)
-            setstate(c, name, it, "DONE", remote_id=str(media.pk), note=f"scheduled {when.isoformat()}")
+            media = cl.clip_upload(path=vpath(it), caption=cap, extra_data=extra, trial=bool(want_trial), trial_graduation_strategy=grad)
+            setstate(c, name, it, "DONE", remote_id=str(media.pk), note=f"scheduled {when.isoformat()}{' trial' if want_trial else ''}")
             print(f"   scheduled OK, media {media.pk}")
         except Exception as e:
             setstate(c, name, it, "AMBIGUOUS", note=type(e).__name__)

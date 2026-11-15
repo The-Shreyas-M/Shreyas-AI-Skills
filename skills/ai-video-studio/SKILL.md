@@ -17,7 +17,7 @@ Workspace: its path is in `~/.claude/ai-video-editor.json` (key `workspace`; def
    Forks of this chat are the expensive option: avoid.
 4. Relay the report briefly: files, lengths, titles. Tell the user to watch `Exports/<project>/` and reply with notes (one at a time) or "approved". You do not post yet.
 5. On notes: send ONE follow-up to the same worker (`SendMessage`) with only the change. Never re-run the whole job.
-6. On "approved" + a destination ("YouTube Shorts, one a day at 7:30 pm"): delegate or run `post.py add ... --when ...`, `post.py approve <id>`, `post.py plan`, dry-run, show the plan, and only run `--execute` after the user says go. Instagram: warn it is unofficial. Other platforms: `post.py pack`.
+6. On "approved" + a destination ("YouTube Shorts, one a day at 7:30 pm"): delegate or run `post.py add ... --when ...`, `post.py approve <id>`, `post.py plan`, dry-run, show the plan, and only run `--execute` after the user says go. Instagram: warn it is unofficial; ALL Instagram reels are uploaded as Trial Reels (non-followers first, for discovery) and the poster halts if the account is not eligible. Other platforms: `post.py pack`.
 7. Confirm what was done with channel name, times and links. Report failures verbatim; never retry an AMBIGUOUS job.
 
 ## Rules that never bend
