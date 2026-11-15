@@ -33,6 +33,8 @@ My own skills in this repo:
 | `ai-video` | the ONE command for all video work: asks what you have and want, routes to the right tool (Shorts, long-video clips, faceless reels, launch videos, posting). Full public toolkit with one-click installer: https://github.com/The-Shreyas-M/ai-video-editor |
 | `clip-video` | third-party (Devini Community Edition 1.0, MIT, based on Plextrang/Claude-Video-Clipper): long video or YouTube URL to vertical shorts; AI picks the moments, face-tracked 9:16 reframing, word captions, zooms, SFX. Run `python install.py` inside the skill folder once (`npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill clip-video`) |
 | `ai-video-studio` | the "AI Video Editor" workspace for any chat: drop videos in a folder, a subagent edits them (using shorts-from-main-video / clip-video), you approve, then a safe ledger-based poster schedules them on YouTube (official API) / Instagram (optional) / manual packs; `scripts/setup_workspace.py` rebuilds the folder on a new PC (`npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill ai-video-studio`) |
+| `new-project` | /new-project: interview → spec → repo scaffold (CLAUDE.md, SPEC, TODO, HANDOFF, WORKFLOW, cheap subagents) → agile sprint build loop with an orchestrator that delegates to free/cheap models. (`npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill new-project`) |
+| `iot-engineer` | /iot-engineer: electronics + ESP32/ESP-IDF method — start a firmware stack from scratch, wiring tables, hardware/protocol debugging, gotchas catalogue. (`npx skills add https://github.com/The-Shreyas-M/Shreyas-AI-Skills --skill iot-engineer`) |
 
 Requires Node.js ≥ 18. Verify with `npx skills list`.
 
