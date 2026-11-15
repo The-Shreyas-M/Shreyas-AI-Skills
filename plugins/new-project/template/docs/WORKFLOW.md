@@ -67,7 +67,7 @@ Decide in this order for every task:
 4. **`builder` (sonnet) — escalation only.** Use it when: opencode failed per the ladder below; the project is confidential; this is a cloud session; or the task truly cannot be split (rare — write the reason in `docs/DECISIONS.md`).
 5. **You:** architecture, interfaces between modules, root-cause debugging, reviewing diffs, anything ambiguous.
 
-Independent files → several opencode runs in parallel (run them in the background). One writer per set of files at a time.
+Tasks that touch **different** files → several opencode runs in parallel (run them in the background). Tasks that touch the **same** file run one after another, never in parallel — list each brief's EDIT ONLY files and check for overlap before dispatching.
 
 **Confidential project** (`CLAUDE.md` → Confidential says client/employer code): opencode and every free gateway are off. `builder` is the writer; keep spawns few by giving it whole sprint-sized briefs. Never send secrets to any worker.
 
@@ -84,6 +84,7 @@ timeout 600 opencode run -m opencode/beam-free --auto "Do the task described in 
 - The message comes **first**. `</dev/null` is required. Putting `-f <file>` before the message makes the command hang; to attach an image put `-f <image>` **after** the message.
 - Output goes to the log file; read only the tail. Then run the DONE WHEN check and `git diff --stat` yourself.
 - A run normally takes under a minute. A timeout usually means a malformed command, not a slow model.
+- The Bash tool's own default timeout is 2 minutes: for a larger brief set the tool timeout to 600000 ms or run the command in the background.
 - Write briefs with the file-writing tool, not a shell heredoc (heredocs with quotes break in this shell).
 
 ### The exact brief (every opencode run)

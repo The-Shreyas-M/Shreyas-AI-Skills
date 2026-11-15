@@ -3,7 +3,12 @@
 # Free models through `opencode run` are the default workers - see docs/WORKFLOW.md.
 cd "${CLAUDE_PROJECT_DIR:-.}" 2>/dev/null || exit 0
 # No opencode on this machine (cloud session, other machine): Claude subagents are allowed.
-command -v opencode >/dev/null 2>&1 || exit 0
+found=0
+command -v opencode >/dev/null 2>&1 && found=1
+for p in "$APPDATA/npm/opencode" "$APPDATA/npm/opencode.cmd" "$HOME/.opencode/bin/opencode" "$HOME/.npm-global/bin/opencode" /usr/local/bin/opencode /opt/homebrew/bin/opencode; do
+  [ -e "$p" ] && found=1
+done
+[ "$found" = 1 ] || exit 0
 # An exception was recorded by the orchestrator: allowed.
 [ -s .oc/ALLOW_CLAUDE_AGENT ] && exit 0
 cat >&2 <<EOF

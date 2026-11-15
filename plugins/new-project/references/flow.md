@@ -70,9 +70,10 @@ plugin's `references/chips.md` if that plugin is installed. Rules:
    S="<root>/template"; P="<project path>"
    mkdir -p "$P" && cp -r "$S/." "$P/" && mv "$P/dot-claude" "$P/.claude" && cd "$P" && git init -q
    ```
+   Client/employer project: delete `.claude/settings.json` and `.claude/hooks/` after the copy — opencode is off there and `builder` is the writer.
 2. You write `docs/SPEC.md` yourself from the interview (this is the one file that needs your judgment). Give every requirement an id (`R1`, `R2`…) and a priority (Must / Should / Later).
 3. You write Sprint 1–2 in `TODO.md`, each task tagged `[oc]` / `[me]` / `[tool]` (most are `[oc]`) (3–7 tasks each, each task cites an R-id and has a check). Later sprints stay as one-line milestones — plan them when reached.
-4. Delegate the rest with a brief that contains the facts — to a free model through `opencode run` on a personal project (exact brief and tested command in the template's `docs/WORKFLOW.md`), or to the `scribe` agent only if the project is confidential: fill the `{{placeholders}}` in `CLAUDE.md`, `HANDOFF.md`, `docs/DECISIONS.md`; add a type-appropriate `.gitignore`; for hardware projects create `docs/WIRING.md` (iot-engineer format); fill `docs/TOOLCHAIN.md` with every tool the stack needs. Then check its diff.
+4. Delegate the rest with a brief that contains the facts — to a free model through `opencode run` on a personal project (exact brief and tested command in the template's `docs/WORKFLOW.md`), or to the `scribe` agent only if the project is confidential: fill the `{{placeholders}}` in `CLAUDE.md`, `HANDOFF.md`, `docs/DECISIONS.md`; append type-appropriate entries to the existing `.gitignore` (keep the `.oc/` line); for hardware projects create `docs/WIRING.md` (iot-engineer format); fill `docs/TOOLCHAIN.md` with every tool the stack needs. Then check its diff.
    Also have it register the project: if `~/.claude/workspace-registry.txt` exists, run the `shreyas-workspace-replicate:log-tool` skill for the new project and its tools.
 5. Show the owner a ≤15-line summary: what v1 is, what is out of scope, sprint 1 tasks, stack, where it runs. Ask: **"Green flag to build?"** Apply corrections to SPEC first.
 
