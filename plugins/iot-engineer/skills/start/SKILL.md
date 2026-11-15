@@ -8,7 +8,7 @@ Plugin root: `${CLAUDE_PLUGIN_ROOT}` — references live in `${CLAUDE_PLUGIN_ROO
 
 ## 1. Know the hardware first (chip intake)
 
-**Knowledge base first.** If `~/.claude/workspace-registry.txt` exists, the owner's private knowledge base is at `<that path>/knowledge/` (`INDEX.md` maps it). Before asking anything below, send one haiku agent to answer from `hardware-inventory.md`, `domains/iot.md`, `workspace.md`, `lessons.md` and the tool registry: which of these intake items are on record, which boards/parts/bench gear the owner has, which toolchains are installed (confirm with `--version`), and any past lesson about this chip or protocol. Use what it finds, show it as "on record — correct me if wrong", ask only the gaps, and write new facts back (`shreyas-workspace-replicate:kb`; newly bought parts go to `hardware-inventory.md`). Every `iot-engineer` sub-skill follows this rule.
+**Knowledge base first.** If `~/.claude/workspace-registry.txt` exists, the owner's private knowledge base is at `<that path>/knowledge/` (`INDEX.md` maps it). Before asking anything below, answer these yourself with Grep (targeted terms, no agent spawn) from `hardware-inventory.md`, `domains/iot.md`, `workspace.md`, `lessons.md` and the tool registry: which of these intake items are on record, which boards/parts/bench gear the owner has, which toolchains are installed (confirm with `--version`), and any past lesson about this chip or protocol. Use what it finds, show it as "on record — correct me if wrong", ask only the gaps, and write new facts back (`shreyas-workspace-replicate:kb`; newly bought parts go to `hardware-inventory.md`). Every `iot-engineer` sub-skill follows this rule.
 
 Never design, wire or debug against a guessed part. If any of these is unknown after that, ask (one round) or read it from the board — details and commands in `references/chips.md`:
 
@@ -52,11 +52,13 @@ You (main model) own: architecture, module interfaces (public headers), pin/part
 
 | Work | Give to |
 |---|---|
-| Find things in code; run a build and return the first real error; summarise a long serial log; pull a pin table, register or timing value from a datasheet PDF | haiku |
-| Implement one module from a header you wrote; host tests; simulators and bench scripts; a web page for an existing API; BOM lookup of alternates | sonnet |
-| Kconfig menus, CMake files, doc tables, boilerplate copied from an existing pattern | free model via `opencode run` (personal projects only; pick the model for the task) or haiku |
+| Implement one module from a header you wrote; host tests; simulators and bench scripts; a web page for an existing API; Kconfig menus, CMake files, doc tables, boilerplate | **free model via `opencode run`** with an exact brief (the default writer on personal projects; command and brief format in the project's `docs/WORKFLOW.md`). Sonnet only after opencode fails its ladder, or on client/employer code |
+| A lookup, a one-line fix, running a build and reading the filtered output, a doc row | yourself — never an agent spawn |
+| Summarise a long serial log; pull a pin table, register or timing value from a long datasheet; list where something is used | `opencode run` with a read-only brief; a haiku agent only if it needs Claude-only tools |
 | Judging a photo of a board, a scope shot or a schematic image | a vision-capable model only (haiku or better; a free model only after it passes a vision probe with a known image) |
-| Docs: `HANDOFF.md`, `WIRING.md`, `PENDING.md`, `TOOLCHAIN.md` | haiku — then grep identifiers and read the prose once |
+| Docs: `HANDOFF.md`, `WIRING.md`, `PENDING.md`, `TOOLCHAIN.md` | small edits yourself; bulk writing via `opencode run` — then grep identifiers and read the prose once |
+
+Every Claude subagent spawn (haiku or sonnet) costs 60k+ tokens of the owner's plan however small the job; `opencode run` costs none. So: opencode writes, you brief and verify, Claude subagents are the exception.
 
 - **Header-first contract:** you write the public header with full comments; the subagent implements against it and may not change it.
 - **One writer per component folder.** Shared files (`sdkconfig.defaults`, top-level CMake, `AGENTS.md`) are edited only by you.

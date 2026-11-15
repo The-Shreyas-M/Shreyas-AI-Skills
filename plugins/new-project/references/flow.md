@@ -11,7 +11,7 @@ Do the phases in order. Do not write project code before Phase 5.
 
 If `~/.claude/workspace-registry.txt` exists, the owner has a private shared knowledge base at `<that path>/knowledge/` (start at `INDEX.md`) and a tool registry. Use it by default:
 
-1. As soon as the type and pitch are known, send **one haiku agent** with a numbered list of the interview questions for this type plus: "which of these does the knowledge base already answer? what tools for this stack are already installed (grep the registry, confirm with `--version`)? which parts/boards does the owner already have? any past lesson relevant to this kind of project?" It answers per question in one line with the source file, or `NOT IN KB`. Do not read the knowledge files into your own context.
+1. As soon as the type and pitch are known, look it up **yourself with Grep** (targeted terms in `knowledge/*.md` and the registry `tools.yaml`, a few lines of context — no agent spawn, no whole-file reads). Only if the sweep is large, hand one agent a numbered list of the interview questions for this type plus: "which of these does the knowledge base already answer? what tools for this stack are already installed (grep the registry, confirm with `--version`)? which parts/boards does the owner already have? any past lesson relevant to this kind of project?" It answers per question in one line with the source file, or `NOT IN KB`. Do not read the knowledge files into your own context.
 2. In the interview, **do not ask what the knowledge base answered**. Show those answers once as a short "On record — correct me if wrong" list, and ask only the `NOT IN KB` questions.
 3. Never install or set up something the registry shows as installed and that still answers `--version`.
 4. Write back what you learn (`shreyas-workspace-replicate:kb` for facts, `:log-tool` for tools): new preferences, parts bought, decisions that outlive this project, lessons at each checkpoint.
@@ -65,7 +65,7 @@ plugin's `references/chips.md` if that plugin is installed. Rules:
    ```
 2. You write `docs/SPEC.md` yourself from the interview (this is the one file that needs your judgment). Give every requirement an id (`R1`, `R2`…) and a priority (Must / Should / Later).
 3. You write Sprint 1–2 in `TODO.md` (3–7 tasks each, each task cites an R-id and has a check). Later sprints stay as one-line milestones — plan them when reached.
-4. Delegate the rest to the `scribe` agent (haiku) with a brief that contains the facts: fill the `{{placeholders}}` in `CLAUDE.md`, `HANDOFF.md`, `docs/DECISIONS.md`; add a type-appropriate `.gitignore`; for hardware projects create `docs/WIRING.md` (iot-engineer format); fill `docs/TOOLCHAIN.md` with every tool the stack needs. Then check its diff.
+4. Delegate the rest with a brief that contains the facts — to a free model through `opencode run` on a personal project (exact brief and tested command in the template's `docs/WORKFLOW.md`), or to the `scribe` agent only if the project is confidential: fill the `{{placeholders}}` in `CLAUDE.md`, `HANDOFF.md`, `docs/DECISIONS.md`; add a type-appropriate `.gitignore`; for hardware projects create `docs/WIRING.md` (iot-engineer format); fill `docs/TOOLCHAIN.md` with every tool the stack needs. Then check its diff.
    Also have it register the project: if `~/.claude/workspace-registry.txt` exists, run the `shreyas-workspace-replicate:log-tool` skill for the new project and its tools.
 5. Show the owner a ≤15-line summary: what v1 is, what is out of scope, sprint 1 tasks, stack, where it runs. Ask: **"Green flag to build?"** Apply corrections to SPEC first.
 
@@ -107,6 +107,9 @@ If `/goal` is unavailable in that session, the owner types `/sprint` (a skill th
 One goal per sprint. At the checkpoint the owner tests, gives feedback, and pastes the line again.
 
 ## Hard rules
+
+- **opencode first.** On every non-confidential project the default writer of code, tests, config and docs is a free model through `opencode run` with an exact brief. Every Claude subagent spawn (haiku or sonnet) costs 60k+ tokens of the owner's plan, so those are escalation only: after opencode fails its ladder, on confidential code, or in cloud sessions. Tiny jobs you do yourself.
+- **Confidentiality is a required interview answer** (personal / client-employer). Write it into `CLAUDE.md` → Confidential; never leave the placeholder. Unanswered → ask before any delegation. Personal → opencode is on.
 
 - No feature without an R-id in SPEC. No "while I'm here" extras. Working → good UI/UX → only then extras the owner asks for.
 - Ask the owner only at: sprint checkpoints, something you cannot test (hardware, real accounts, visual taste), spending money, first production deploy, deleting data, or a spec gap that blocks every remaining task.

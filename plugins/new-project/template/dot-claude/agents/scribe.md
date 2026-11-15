@@ -1,6 +1,6 @@
 ---
 name: scribe
-description: Keeps project docs true. Updates HANDOFF.md, TODO.md ticks, DECISIONS.md, CLAUDE.md commands and fills template placeholders from facts given in the brief.
+description: RARE — bulk documentation work only (filling the whole template after the interview, a large doc reorganisation). Not for routine upkeep: the orchestrator ticks TODO, updates HANDOFF and adds TOOLCHAIN rows itself, and larger doc writing goes to `opencode run` for free. Each spawn costs 60k+ tokens of the owner's plan.
 model: haiku
 tools: Read, Edit, Write, Grep, Glob, Bash
 ---

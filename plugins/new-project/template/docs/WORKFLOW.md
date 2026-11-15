@@ -9,13 +9,25 @@ at checkpoints.
 1. Read `CLAUDE.md`, `HANDOFF.md`, `TODO.md`. Open `docs/SPEC.md` only for the sections a task needs.
 2. Continue from **Next step** in `HANDOFF.md`. Do not re-plan what is already planned.
 
+## Token budget — read this before delegating anything
+
+The owner's plan has a usage limit. What things cost against it:
+
+| Action | Cost against the plan |
+|---|---|
+| A tool call you make yourself (grep, read 50 lines, one edit, run a command) | hundreds of tokens |
+| `opencode run` with a free model | **zero** — it is not Claude |
+| Spawning any Claude subagent (`scout`, `scribe`, `builder`, any haiku/sonnet agent) | **60,000–170,000 tokens each, even for a five-minute job** (measured) |
+
+So: **opencode writes, you brief and verify, Claude subagents are the exception.** Free models are smart when the brief is exact; a bad result almost always means a vague brief.
+
 ## Shared knowledge base (local sessions)
 
-If `~/.claude/workspace-registry.txt` exists, it points to the owner's private workspace repo: `knowledge/INDEX.md` (owner preferences, approach, this machine, hardware owned, other projects, lessons) and a registry of every installed tool. Rules:
-- **Before asking the owner** a context question, and **before installing or configuring any tool**, look it up: one haiku agent (`scout`), one precise question, answer ≤100 words with the source file, or `NOT IN KB`. Never load the knowledge files into your own context.
+If `~/.claude/workspace-registry.txt` exists, it points to the owner's private workspace repo: `knowledge/INDEX.md` (owner preferences, approach, this machine, hardware owned, other projects, lessons) and `plugins/shreyas-workspace-replicate/registry/tools.yaml` (every installed tool). Rules:
+- **Before asking the owner** a context question, and **before installing or configuring any tool**, look it up **yourself with Grep** (search term in `<path>/knowledge/` or `tools.yaml`, 3 lines of context). Do not spawn an agent for a lookup and do not read whole files.
 - Found → use it and say in one line what you took. Recorded as installed and `--version` answers → do not install again.
-- Not found → ask the owner once (or find out), then write it back with the `shreyas-workspace-replicate:kb` skill so no session asks again.
-- At each checkpoint, have `scribe` write back durable facts from this sprint (decisions that outlive the project, parts bought, lessons).
+- Not found → ask the owner once (or find out), then add one bullet to the right knowledge file yourself, ending `(source: <project>, <date>)`.
+- Knowledge and registry edits are committed and pushed once per checkpoint, not per fact (`shreyas-workspace-replicate:kb` / `:log-tool` describe the format).
 - No pointer file (cloud session) → skip; rely on this repo's docs.
 
 ## The loop
@@ -24,45 +36,43 @@ Repeat until the current sprint's **Done when** list passes:
 
 1. Take the top unticked task of the current sprint.
 2. **Trace check:** it must cite a SPEC id (`R#`). No id → do not build it; add it to Parking lot.
-3. **Route** it (table below). If delegating, write a brief.
-4. **Verify yourself:** run the task's check (build, test, curl, screenshot). Run `git diff --stat` and confirm only the intended files changed. A subagent saying "done" is not evidence.
+3. **Route** it (next section). Writing the brief is your main job.
+4. **Verify yourself:** run the task's check (build, test, curl, screenshot). Run `git diff --stat` and confirm only the intended files changed. A worker saying "done" is not evidence.
 5. Tick the task in `TODO.md` with one line of evidence. Commit: `S<sprint>-T<task>: <what>`.
-6. After every 3 tasks, and before you stop for any reason, have `scribe` update `HANDOFF.md`.
+6. After every 3 tasks, and before you stop for any reason, update State / Next step in `HANDOFF.md` yourself (a few lines — never an agent spawn).
 
 Sprint end: run every Done-when check → update `HANDOFF.md` → write a **CHECKPOINT** (below) → stop and wait for the owner.
 
-## Routing — cheapest tier that can do the task
+## Routing — opencode first
 
-| Tier | Use for | How |
-|---|---|---|
-| 0 Free (local sessions only) | Boilerplate, mechanical edits across files, renames, simple tests, docs, well-specified single-file code | `opencode run -m <model> --auto -f brief.md "Do the task in brief.md"` from the project folder (Bash tool). **Choose `<model>` for the task** — see "Picking a free model" below. |
-| 1 Haiku | Finding things in the code, running builds/tests and summarising the log, doc upkeep | `scout` or `scribe` agent |
-| 2 Sonnet | Implementing a feature or fix from a clear brief | `builder` agent |
-| 3 You (or an agent on your own model) | Architecture, interfaces between modules, debugging after a lower tier failed, reviewing diffs, anything ambiguous | do it directly |
+Decide in this order for every task:
 
-Rules:
-- Delegate when the brief is short (under ~150 words) and the work is more than a few tool calls. If explaining costs more than doing, do it yourself.
-- One writer per set of files at a time. Independent tasks may run in parallel.
-- **Escalate on failure:** a tier fails its check twice → move the task one tier up with the failure output. Tier 3 fails twice → write BLOCKED in `HANDOFF.md` with the evidence and take the next independent task.
-- Free tier: never for secrets, never for employer or client code (see `CLAUDE.md` → Confidential). In cloud sessions tier 0 does not exist; start at tier 1.
-- Do not read a subagent's transcript or have it paste files back. Ask for a report of at most 150 words: what changed, the check it ran, the result, anything odd.
+1. **Tiny** (about three tool calls or fewer: a lookup, a one-line fix, ticking a box, a doc row, running a command) → do it yourself. Never spawn anything for these.
+2. **Any writing of code, tests, config, scripts or docs → opencode** (the default writer, on every project that is not confidential). If you cannot write an exact brief yet, that means *you* still owe a decision: settle the interface, split the task smaller, paste in the pattern — then brief it. "Hard to brief" is not a reason to use sonnet.
+3. **Broad search or a long log** that would cost you more than ~5,000 tokens to read → opencode with a read-only brief ("list every file that …", "give the first error and its file:line") or, if it needs Claude-only tools, one `scout`.
+4. **`builder` (sonnet) — escalation only.** Use it when: opencode failed per the ladder below; the project is confidential; this is a cloud session; or the task truly cannot be split (rare — write the reason in `docs/DECISIONS.md`).
+5. **You:** architecture, interfaces between modules, root-cause debugging, reviewing diffs, anything ambiguous.
 
-### Picking a free model (tier 0)
+Independent files → several opencode runs in parallel (run them in the background). One writer per set of files at a time.
 
-Run `opencode models` and choose by what the task needs — never by habit:
+**Confidential project** (`CLAUDE.md` → Confidential says client/employer code): opencode and every free gateway are off. `builder` is the writer; keep spawns few by giving it whole sprint-sized briefs. Never send secrets to any worker.
 
-| Task needs | Pick |
-|---|---|
-| To look at an image (screenshot, UI check, photo of a board or schematic) | no fixed model: **probe first** — `opencode run -m <model> -f <known image> "Describe this image in one line. If you received no image, reply exactly: NO IMAGE"`. A correct description = it has vision; record the model in `HANDOFF.md` Gotchas and reuse it. Try the owner's current favourite first (`opencode/beam-free` at the time of writing). None passes → haiku. A text-only model such as `big-pickle` cannot do this. |
-| Writing or changing code | the strongest general coding model in the list (`opencode/big-pickle` at the time of writing) |
-| Mechanical edits, docs, renames, formatting | a fast one (`flash`, `lightning`, `small` in the name) |
-| A model you have not used before | give it one tiny task first and check the result before trusting it with real work |
+**Usage limit.** You cannot see how much of the limit is left, so run opencode-first at all times. If the owner says the limit is close, or a Claude subagent call fails with a usage/rate-limit error: write `HANDOFF.md` first (so the work survives a cut-off), then spawn **no** Claude subagents for the rest of the session — everything writable goes through opencode, you only brief and verify, in short turns.
 
-Rate-limited or quota error (429, "limit", "quota") → try two or three other `opencode/*` free models of the same kind (these no-sign-up models are the default; avoid omniroute in normal work). Only if all are depleted and the task should stay free, use the omniroute gateway (`opencode run -m omniroute/<combo> ...`; start it first if nothing answers on its port). Otherwise haiku. Do not burn turns retrying a depleted model.
+### Running opencode (tested command — keep the shape)
 
-### Free models need exact briefs — or do not use them
+```bash
+mkdir -p .oc            # .oc/ is in .gitignore; briefs and logs live there
+# write the brief to .oc/<task>.md with your file-writing tool, then:
+timeout 600 opencode run -m opencode/big-pickle --auto "Do the task described in the file .oc/<task>.md. Follow it exactly." </dev/null > .oc/<task>.log 2>&1; tail -c 600 .oc/<task>.log
+```
 
-Free models do good work on exact instructions and poor work on vague ones. Use tier 0 **only** when you can write all of this; otherwise give the task to haiku or sonnet:
+- The message comes **first**. `</dev/null` is required. Putting `-f <file>` before the message makes the command hang; to attach an image put `-f <image>` **after** the message.
+- Output goes to the log file; read only the tail. Then run the DONE WHEN check and `git diff --stat` yourself.
+- A run normally takes under a minute. A timeout usually means a malformed command, not a slow model.
+- Write briefs with the file-writing tool, not a shell heredoc (heredocs with quotes break in this shell).
+
+### The exact brief (every opencode run)
 
 ```
 TASK: <one sentence>
@@ -77,15 +87,28 @@ DO NOT: add features, rename things, change formatting elsewhere, install packag
 REPLY WITH: files changed + the DONE WHEN output. Nothing else.
 ```
 
-- One small outcome per run (one file or one repeated mechanical change). No design decisions, no "figure out", no debugging, no multi-file features.
-- You must be able to check the result with a command or a 10-second diff read. Always run the DONE WHEN check and `git diff --stat` yourself.
-- First failure → fix the brief once if it was unclear; second failure → move the task up a tier. Do not iterate on a free model.
+- One clear outcome per run: one module, one file, one test file, or one repeated mechanical change. A feature that spans files = several briefs, with the shared interface (types, signatures, routes) decided by you and pasted into each.
+- You must be able to check the result with a command or a short diff read.
+- **Failure ladder:** 1st failure → improve the brief (add the pattern, the exact names, the missing step) and rerun. 2nd failure → rerun on another coding model from `opencode models`. 3rd failure → `builder` with the brief and the failure output. Builder fails twice → you. You fail twice → BLOCKED in `HANDOFF.md` with the evidence; take the next independent task.
+
+### Picking a free model
+
+Run `opencode models` and choose by what the task needs — never by habit. Default to opencode's own no-sign-up models (`opencode/*`).
+
+| Task needs | Pick |
+|---|---|
+| Writing or changing code | the strongest general coding model in the list (`opencode/big-pickle` at the time of writing) |
+| Mechanical edits, docs, renames, formatting, searches | a fast one (`flash`, `lightning`, `small` in the name) |
+| To look at an image (screenshot, UI check, photo of a board or schematic) | no fixed model: **probe first** — `opencode run -m <model> "Describe this image in one line. If you received no image, reply exactly: NO IMAGE" -f <known image> </dev/null`. A correct description = it has vision; record the model in `HANDOFF.md` Gotchas and reuse it. Try the owner's current favourite first (`opencode/beam-free` at the time of writing). None passes → look at the image yourself. A text-only model such as `big-pickle` cannot do this. |
+| A model you have not used before | one tiny task first; check the result before trusting it |
+
+Rate-limited or quota error (429, "limit", "quota", "unavailable") → try two or three other `opencode/*` models of the same kind. Only if all are depleted, the omniroute gateway (`-m omniroute/auto/best-coding`; start it with `omniroute serve --daemon --no-open --no-tray` if nothing answers on its port). Only if that fails too, `builder`. Do not burn turns retrying a depleted model.
 
 ### Toolchain log
 
-Whenever a task installs or first uses a tool, SDK, global package, driver, CLI, MCP server or skill: `scribe` adds the row to `docs/TOOLCHAIN.md` (name, version, install command, why) in the same sprint, and — in local sessions where `~/.claude/workspace-registry.txt` exists — records it in the workspace registry with the `shreyas-workspace-replicate:log-tool` skill. Nothing is installed untracked. In cloud sessions only `docs/TOOLCHAIN.md` is updated; the backup skill collects it later.
+Whenever a task installs or first uses a tool, SDK, global package, driver, CLI, MCP server or skill: add the row to `docs/TOOLCHAIN.md` yourself (name, version, install command, why) in the same task. In local sessions where `~/.claude/workspace-registry.txt` exists, also record it in the workspace registry at the next checkpoint (`shreyas-workspace-replicate:log-tool`, all new tools in one go). Nothing is installed untracked. In cloud sessions only `docs/TOOLCHAIN.md` is updated; the backup skill collects it later.
 
-### Brief format (every delegation)
+### Brief format for a Claude subagent (the rare cases)
 
 ```
 Goal: <one sentence, the outcome>
@@ -94,6 +117,8 @@ Context: <the 3-8 facts needed: interface, types, conventions, SPEC excerpt>
 Check: <exact command or observation that proves it works>
 Report: max 150 words — changed files, check result, anything odd. No code dumps.
 ```
+
+Give it a sprint-sized piece, not a five-minute one — the spawn costs the same either way. Do not read its transcript.
 
 ## Sprints
 
@@ -133,7 +158,7 @@ Next sprint (proposed): <task titles>
 - Do not refactor working code unless a task says so.
 - Every task leaves the project building and its checks passing.
 
-## Keeping docs true (scribe does the writing)
+## Keeping docs true (small edits yourself; bulk doc writing via opencode)
 
 | File | Holds | Updated |
 |---|---|---|

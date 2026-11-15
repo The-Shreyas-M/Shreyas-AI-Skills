@@ -17,7 +17,7 @@ Free tiers change weekly. **Always run `opencode models` first** and choose from
 Do not assume from the name, and do not just ask "can you see images?" — models answer yes wrongly. Test it:
 
 ```bash
-opencode run -m <model> -f <a small image whose content you know> "Describe this image in one line. If you received no image, reply exactly: NO IMAGE"
+opencode run -m <model> "Describe this image in one line. If you received no image, reply exactly: NO IMAGE" -f <a small image whose content you know> </dev/null
 ```
 
 - Correct, specific description → it has vision; use it for this session's image tasks and note it in `HANDOFF.md` → Gotchas (`vision-capable free model: <name>, checked <date>`), so the next session does not re-probe.
@@ -27,7 +27,7 @@ opencode run -m <model> -f <a small image whose content you know> "Describe this
 ## Invocation
 
 ```bash
-cd <project> && opencode run -m <provider/model> --auto -f brief.md "Do the task in brief.md"
+cd <project> && mkdir -p .oc && timeout 600 opencode run -m <provider/model> --auto "Do the task described in the file .oc/<task>.md. Follow it exactly." </dev/null > .oc/<task>.log 2>&1; tail -c 600 .oc/<task>.log
 ```
 
 ## When the free tier is depleted
@@ -40,14 +40,16 @@ Default is always opencode's own no-sign-up models (`opencode/*`). Avoid routing
 2. Only when every suitable `opencode/*` model is depleted and the task really should stay free — the omniroute gateway (cycles across its keyless pool by itself):
    ```bash
    omniroute serve --daemon --no-open --no-tray      # only if nothing answers on port 20128
-   opencode run -m omniroute/auto/best-coding --auto -f brief.md "Do the task in brief.md"
+   opencode run -m omniroute/auto/best-coding --auto "Do the task described in the file .oc/<task>.md. Follow it exactly." </dev/null > .oc/<task>.log 2>&1
    ```
    Built-in combos: `omniroute/auto/best-free`, `omniroute/auto/best-coding`, `omniroute/auto/coding:free`, and `omniroute/auto/best-vision` (the only one for images).
    Note: omniroute's zero-signup pool partly draws on the same free quota as opencode, so when one is exhausted the other often is too. Providers that need an account give real extra capacity — only the owner can add those.
-3. Still failing → use haiku. Do not spend turns retrying a depleted model.
+3. Still failing → the `builder` agent, or do it yourself. Do not spend turns retrying a depleted model.
+
+Command shape (tested): the message comes first, `</dev/null` is required, output goes to a log file. `-f <file>` placed before the message makes the run hang; attach images with `-f` after the message.
 
 ## Never
 
 Secrets, credentials, or employer/client code to any free model or free gateway.
 
-Free models only get the exact brief format in the project's `docs/WORKFLOW.md` ("Free models need exact briefs"). No exact brief → use haiku or sonnet.
+Free models are the default writers and always get the exact brief format in the project's `docs/WORKFLOW.md` ("The exact brief"). No exact brief yet → decide the interface and split the task until you can write one; that is the orchestrator's job, not a reason to spawn sonnet.

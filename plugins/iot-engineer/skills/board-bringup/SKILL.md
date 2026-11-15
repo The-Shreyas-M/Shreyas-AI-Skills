@@ -47,4 +47,4 @@ Enable everything; watch for brownouts when the radio transmits or relays switch
 ## 6. Close out
 Update `docs/WIRING.md` evidence column to "confirmed on board", clear `tests/PENDING.md` rows, write faults and reworks into `hardware/ERRATA.md`, add new root causes to `gotchas.md`.
 
-**Knowledge base:** if `~/.claude/workspace-registry.txt` exists, first look up the owner's hardware, installed tools, preferences and past lessons in `<that path>/knowledge/` (start at `INDEX.md`) with one haiku agent, ask only what is missing, never reinstall what the registry shows as installed, and write new facts back with `shreyas-workspace-replicate:kb`.
+**Knowledge base:** if `~/.claude/workspace-registry.txt` exists, first look up the owner's hardware, installed tools, preferences and past lessons in `<that path>/knowledge/` (start at `INDEX.md`) yourself with Grep (no agent spawn), ask only what is missing, never reinstall what the registry shows as installed, and write new facts back with `shreyas-workspace-replicate:kb`.

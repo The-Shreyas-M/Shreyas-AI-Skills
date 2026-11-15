@@ -10,7 +10,7 @@ Plugin root: `${CLAUDE_PLUGIN_ROOT}`
    - **All there** → go to step 2.
    - **Missing** → run the `new-project:adopt` skill first. It adds the files without overwriting anything and asks only for what is missing.
 2. **Refresh the method** if the project's `docs/WORKFLOW.md` is older than `${CLAUDE_PLUGIN_ROOT}/template/docs/WORKFLOW.md`: show the owner a one-line summary of what changed and replace it on a yes. Add missing template files with `cp -n` (agents, `docs/TOOLCHAIN.md`, `.claude/skills/sprint`).
-3. Read `docs/WORKFLOW.md`, `HANDOFF.md`, `TODO.md` and follow the workflow from "Session start".
+3. Read `docs/WORKFLOW.md`, `HANDOFF.md`, `TODO.md` and follow the workflow from "Session start". Routing is opencode first: you write exact briefs, free models write the code, you verify; Claude subagents only as escalation. If `CLAUDE.md` → Confidential is unfilled, settle it before delegating anything.
 4. If the owner gave an argument, treat it as a **change request** (WORKFLOW → Change requests): log it, update SPEC, re-plan the affected tasks, then continue.
 5. No current sprint left → plan the next one from SPEC priorities (3–7 tasks, each with an R-id and a check), show it in ≤8 lines, and start on a yes.
 6. To run unattended, give the owner the start line from `HANDOFF.md` to paste.
