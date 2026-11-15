@@ -147,3 +147,5 @@ Confirm option values with `board details`; do not guess them.
 - Replace `LittleFS` with `esp_littlefs` component; replace Arduino `Wire/SPI` with `i2c_master`/`spi_master` drivers.
 - Pull third-party libraries from the ESP Component Registry (`idf.py add-dependency`), or port source as components.
 - Move settings to `sdkconfig.defaults` (flash size, PSRAM mode, partition table, log levels); rebuild from clean.
+
+**Knowledge base:** if `~/.claude/workspace-registry.txt` exists, first look up the owner's hardware, installed tools, preferences and past lessons in `<that path>/knowledge/` (start at `INDEX.md`) with one haiku agent, ask only what is missing, never reinstall what the registry shows as installed, and write new facts back with `shreyas-workspace-replicate:kb`.

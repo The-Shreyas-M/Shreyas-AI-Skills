@@ -9,6 +9,15 @@ at checkpoints.
 1. Read `CLAUDE.md`, `HANDOFF.md`, `TODO.md`. Open `docs/SPEC.md` only for the sections a task needs.
 2. Continue from **Next step** in `HANDOFF.md`. Do not re-plan what is already planned.
 
+## Shared knowledge base (local sessions)
+
+If `~/.claude/workspace-registry.txt` exists, it points to the owner's private workspace repo: `knowledge/INDEX.md` (owner preferences, approach, this machine, hardware owned, other projects, lessons) and a registry of every installed tool. Rules:
+- **Before asking the owner** a context question, and **before installing or configuring any tool**, look it up: one haiku agent (`scout`), one precise question, answer ≤100 words with the source file, or `NOT IN KB`. Never load the knowledge files into your own context.
+- Found → use it and say in one line what you took. Recorded as installed and `--version` answers → do not install again.
+- Not found → ask the owner once (or find out), then write it back with the `shreyas-workspace-replicate:kb` skill so no session asks again.
+- At each checkpoint, have `scribe` write back durable facts from this sprint (decisions that outlive the project, parts bought, lessons).
+- No pointer file (cloud session) → skip; rely on this repo's docs.
+
 ## The loop
 
 Repeat until the current sprint's **Done when** list passes:

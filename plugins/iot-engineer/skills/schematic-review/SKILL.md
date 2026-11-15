@@ -45,3 +45,5 @@ For each finding: where (sheet/designator/net), why it matters, the fix. End wit
 From the symptom, name the nets involved, what a correct board would measure at which test point, and one measurement that separates the two (e.g. "3.3 V on EN and a 115200-baud boot message on TX0 → hardware is alive; look at firmware"). Then continue in `iot-engineer:debug`.
 
 Independent review rule: the reviewer must not be the session that designed the board. Run this as a fresh subagent on a capable model with only the files and this skill.
+
+**Knowledge base:** if `~/.claude/workspace-registry.txt` exists, first look up the owner's hardware, installed tools, preferences and past lessons in `<that path>/knowledge/` (start at `INDEX.md`) with one haiku agent, ask only what is missing, never reinstall what the registry shows as installed, and write new facts back with `shreyas-workspace-replicate:kb`.

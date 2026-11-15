@@ -49,3 +49,5 @@ Check each and list what is needed:
 3. Run the smallest test (I2C scan, ID register read, blink, loopback). State the expected output.
 
 If the owner sends a photo of the wiring, it must be judged by a vision-capable model; check it row by row against the table, not by impression.
+
+**Knowledge base:** if `~/.claude/workspace-registry.txt` exists, first look up the owner's hardware, installed tools, preferences and past lessons in `<that path>/knowledge/` (start at `INDEX.md`) with one haiku agent, ask only what is missing, never reinstall what the registry shows as installed, and write new facts back with `shreyas-workspace-replicate:kb`.

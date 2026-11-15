@@ -35,6 +35,10 @@
 {{"Personal project — free models allowed for tier-0 tasks." OR "Client/company code — never send to free models (opencode free tier, omniroute)."}}
 Secrets live in {{where}}, never in the repo.
 
+## Shared knowledge base
+
+If `~/.claude/workspace-registry.txt` exists, look things up in the owner's knowledge base (`<that path>/knowledge/INDEX.md`) with a haiku subagent **before asking the owner for context and before installing or setting up anything**. Ask or install only what is not found there; write new durable facts back (`shreyas-workspace-replicate:kb`).
+
 ## Toolchain log (mandatory)
 
 - When any tool, SDK, toolchain, global package, driver, CLI, MCP server or skill is installed or first used for this project, add a row to `docs/TOOLCHAIN.md` in the same session: name, version, install command, why. Use a cheap subagent (haiku) for the edit.

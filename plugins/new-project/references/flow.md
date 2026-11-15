@@ -7,6 +7,17 @@ fresh session, so write short, literal, complete files.
 
 Do the phases in order. Do not write project code before Phase 5.
 
+## Phase 0 — Knowledge base first (every sub-skill, before any question)
+
+If `~/.claude/workspace-registry.txt` exists, the owner has a private shared knowledge base at `<that path>/knowledge/` (start at `INDEX.md`) and a tool registry. Use it by default:
+
+1. As soon as the type and pitch are known, send **one haiku agent** with a numbered list of the interview questions for this type plus: "which of these does the knowledge base already answer? what tools for this stack are already installed (grep the registry, confirm with `--version`)? which parts/boards does the owner already have? any past lesson relevant to this kind of project?" It answers per question in one line with the source file, or `NOT IN KB`. Do not read the knowledge files into your own context.
+2. In the interview, **do not ask what the knowledge base answered**. Show those answers once as a short "On record — correct me if wrong" list, and ask only the `NOT IN KB` questions.
+3. Never install or set up something the registry shows as installed and that still answers `--version`.
+4. Write back what you learn (`shreyas-workspace-replicate:kb` for facts, `:log-tool` for tools): new preferences, parts bought, decisions that outlive this project, lessons at each checkpoint.
+
+No pointer file (cloud session, another machine) → skip this phase and interview normally.
+
 ## Phase 1 — Open (one round)
 
 `<root>` below = the plugin root path the sub-skill that sent you here printed.

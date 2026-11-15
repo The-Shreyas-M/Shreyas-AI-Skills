@@ -8,7 +8,9 @@ Plugin root: `${CLAUDE_PLUGIN_ROOT}` — references live in `${CLAUDE_PLUGIN_ROO
 
 ## 1. Know the hardware first (chip intake)
 
-Never design, wire or debug against a guessed part. If any of these is unknown, ask (one round) or read it from the board — details and commands in `references/chips.md`:
+**Knowledge base first.** If `~/.claude/workspace-registry.txt` exists, the owner's private knowledge base is at `<that path>/knowledge/` (`INDEX.md` maps it). Before asking anything below, send one haiku agent to answer from `hardware-inventory.md`, `domains/iot.md`, `workspace.md`, `lessons.md` and the tool registry: which of these intake items are on record, which boards/parts/bench gear the owner has, which toolchains are installed (confirm with `--version`), and any past lesson about this chip or protocol. Use what it finds, show it as "on record — correct me if wrong", ask only the gaps, and write new facts back (`shreyas-workspace-replicate:kb`; newly bought parts go to `hardware-inventory.md`). Every `iot-engineer` sub-skill follows this rule.
+
+Never design, wire or debug against a guessed part. If any of these is unknown after that, ask (one round) or read it from the board — details and commands in `references/chips.md`:
 
 - Exact module marking (e.g. `ESP32-S3-WROOM-1-N8R8`) → chip, flash MB, PSRAM MB and type, antenna.
 - Board: devkit name and revision, or custom PCB (then: schematic available?).

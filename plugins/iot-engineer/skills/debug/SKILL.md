@@ -51,3 +51,5 @@ One numbered action at a time, with the two pins/points named, the expected read
 - Haiku: condense a long log (first error, repeated lines with counts, reset timestamps); find a value in a datasheet; grep a vendor driver for where an error string comes from.
 - Sonnet: write the simulator, sniffer or soak script from your spec.
 - Images (board photo, scope shot) → vision-capable model only.
+
+**Knowledge base:** if `~/.claude/workspace-registry.txt` exists, first look up the owner's hardware, installed tools, preferences and past lessons in `<that path>/knowledge/` (start at `INDEX.md`) with one haiku agent, ask only what is missing, never reinstall what the registry shows as installed, and write new facts back with `shreyas-workspace-replicate:kb`.

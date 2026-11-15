@@ -72,3 +72,5 @@ Gerbers for all copper, mask, silk and edge layers + drill files (zip); BOM (des
 
 ## Stage 7 — after the boards arrive
 Go to `iot-engineer:board-bringup`. Record every fault and rework in `hardware/ERRATA.md` — it is the input for revision B.
+
+**Knowledge base:** if `~/.claude/workspace-registry.txt` exists, first look up the owner's hardware, installed tools, preferences and past lessons in `<that path>/knowledge/` (start at `INDEX.md`) with one haiku agent, ask only what is missing, never reinstall what the registry shows as installed, and write new facts back with `shreyas-workspace-replicate:kb`.
