@@ -17,7 +17,7 @@ Read its `AGENTS.md`/`HANDOFF.md` first; its rules win over this skill. Copy the
 
 ## Always
 - Header first, fully commented; pure logic in files without IDF includes + a host test; tunables in Kconfig; pins only in Kconfig/`sdkconfig.defaults` and mirrored in `docs/WIRING.md`.
-- IDF APIs change between versions — check the installed version's headers or docs (`$IDF_PATH/components/...`) instead of remembered signatures; a haiku agent can look one up.
+- IDF APIs change between versions — check the installed version's headers or docs (`$IDF_PATH/components/...`) instead of remembered signatures; grep the header yourself (one command) — never an agent for a lookup.
 - Use the filtered build script; never paste full build logs into context.
 - Say "built" / "host-tested" / "works on the board" precisely.
 - Orchestration and delegation rules: `iot-engineer:start` §4.

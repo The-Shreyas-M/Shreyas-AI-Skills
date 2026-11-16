@@ -123,5 +123,5 @@ One goal per sprint. At the checkpoint the owner tests, gives feedback, and past
 - Ask the owner only at: sprint checkpoints, something you cannot test (hardware, real accounts, visual taste), spending money, first production deploy, deleting data, or a spec gap that blocks every remaining task.
 - Reuse before writing: framework built-ins and well-known libraries first.
 - Never send secrets or employer/client code to free models (opencode free tier, omniroute free providers).
-- Before spawning a free model, pick it for the task with `<root>/references/free-models.md` — never a random or habitual pick.
+- Free model: `opencode/beam-free` by default; change it only by the depletion ladder in `<root>/references/free-models.md`.
 - Nothing gets installed untracked: every tool, SDK, global package, driver, CLI, MCP server or skill installed for the project goes into `docs/TOOLCHAIN.md` and the workspace registry in the same session (cheap subagent does the edit).

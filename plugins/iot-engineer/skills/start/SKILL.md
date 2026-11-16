@@ -54,11 +54,13 @@ You (main model) own: architecture, module interfaces (public headers), pin/part
 |---|---|
 | Implement one module from a header you wrote; host tests; simulators and bench scripts; a web page for an existing API; Kconfig menus, CMake files, doc tables, boilerplate | **free model via `opencode run`** with an exact brief (the default writer on personal projects; command and brief format in the project's `docs/WORKFLOW.md`). Sonnet only after opencode fails its ladder, or on client/employer code |
 | A lookup, a one-line fix, running a build and reading the filtered output, a doc row | yourself — never an agent spawn |
-| Summarise a long serial log; pull a pin table, register or timing value from a long datasheet; list where something is used | `opencode run` with a read-only brief; a haiku agent only if it needs Claude-only tools |
-| Judging a photo of a board, a scope shot or a schematic image | a vision-capable model only (haiku or better; a free model only after it passes a vision probe with a known image) |
+| Summarise a long serial log; pull a pin table, register or timing value from a long datasheet; list where something is used | short → yourself with grep; long → `opencode run` with a read-only brief. Not a Claude agent |
+| Judging a photo of a board, a scope shot or a schematic image | yourself — look at the image directly. Many images (10+) → a free model that passed a vision probe (`opencode/beam-free` has vision) |
 | Docs: `HANDOFF.md`, `WIRING.md`, `PENDING.md`, `TOOLCHAIN.md` | small edits yourself; bulk writing via `opencode run` — then grep identifiers and read the prose once |
 
 Every Claude subagent spawn (haiku or sonnet) costs 60k+ tokens of the owner's plan however small the job; `opencode run` costs none. So: opencode writes, you brief and verify, Claude subagents are the exception.
+
+**When an agent pays off.** A Claude subagent costs 60k+ tokens just to start, so it saves tokens only when the job would otherwise put more than about that much into your own context (which you then re-read on every later turn) *and* a free model cannot do it. Everything smaller you do yourself: send command output to a file and grep it, read only the lines you need. Writing and long reading go to `opencode run`.
 
 - **Header-first contract:** you write the public header with full comments; the subagent implements against it and may not change it.
 - **One writer per component folder.** Shared files (`sdkconfig.defaults`, top-level CMake, `AGENTS.md`) are edited only by you.

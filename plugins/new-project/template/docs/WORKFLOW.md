@@ -28,6 +28,7 @@ So: **opencode writes, you brief and verify, Claude subagents are the exception.
 - **One sprint per session.** When the sprint ends, or the context guard speaks (a hook prints a CONTEXT GUARD notice past ~200k tokens), update `HANDOFF.md` and `TODO.md` and tell the owner to open a new session. Never roll into the next sprint in the same session.
 - **After a pause of an hour or more, do not resume a big session** — the cache has expired and the whole context is paid for again. `HANDOFF.md` exists so a new session can start cold.
 - **Keep things out of your context:** `tail` logs instead of reading them, read only the lines you will edit, look at an image only when a check needs it, and do not repeat file contents in your replies.
+- **When an agent pays off.** A Claude subagent costs 60k+ tokens just to start, so it saves tokens only when the job would otherwise put more than about that much into your own context (which you then re-read on every later turn) *and* a free model cannot do it. Everything smaller you do yourself: send command output to a file and grep it, read only the lines you need. Writing and long reading go to `opencode run`.
 - **A Claude subagent for a Claude-only tool** (for example reading pages in the owner's logged-in browser) is **haiku**, briefed to save what it reads into files under `.oc/` and reply in ≤150 words. A free model then reads those files.
 
 ## Shared knowledge base (local sessions)

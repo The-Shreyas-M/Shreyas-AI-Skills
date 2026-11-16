@@ -1,6 +1,6 @@
 ---
 name: sprint
-description: Run or continue this project's build loop (/sprint) — reads docs/WORKFLOW.md, HANDOFF.md and TODO.md and works through the current sprint with cheap subagents until the next checkpoint. Lives in the repo, so it works in cloud sessions and on any machine. Use to continue the project, start the next sprint, or apply a change request.
+description: Run or continue this project's build loop (/sprint) — reads docs/WORKFLOW.md, HANDOFF.md and TODO.md and works through the current sprint with free-model workers (opencode) until the next checkpoint. Lives in the repo, so it works in cloud sessions and on any machine. Use to continue the project, start the next sprint, or apply a change request.
 argument-hint: "[change request or 'next']"
 ---
 

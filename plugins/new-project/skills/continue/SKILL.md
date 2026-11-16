@@ -1,6 +1,6 @@
 ---
 name: continue
-description: Continue any existing project in the agile, cheap-subagent way (/new-project:continue). If the project already has docs/WORKFLOW.md it resumes the sprint loop from HANDOFF.md; if not, it adopts the project first (adds spec, sprints, handoff, workflow, subagents) and then runs the loop. Use to pick up work on a project, run the next sprint, or bring an old project under the workflow.
+description: Continue any existing project in the agile way with free-model workers (opencode) (/new-project:continue). If the project already has docs/WORKFLOW.md it resumes the sprint loop from HANDOFF.md; if not, it adopts the project first (adds spec, sprints, handoff, workflow, subagents) and then runs the loop. Use to pick up work on a project, run the next sprint, or bring an old project under the workflow.
 argument-hint: "[what to do next, or a change request]"
 ---
 

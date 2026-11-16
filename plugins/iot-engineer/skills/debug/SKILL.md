@@ -48,8 +48,9 @@ Two failed hypotheses → stop guessing; list proven vs assumed; choose the chea
 One numbered action at a time, with the two pins/points named, the expected reading, and what each result means. Never "check the wiring".
 
 ## Delegation while debugging
-- Haiku: condense a long log (first error, repeated lines with counts, reset timestamps); find a value in a datasheet; grep a vendor driver for where an error string comes from.
-- Sonnet: write the simulator, sniffer or soak script from your spec.
-- Images (board photo, scope shot) → vision-capable model only.
+- Yourself, with commands: save the log to a file, then `grep -n -m1` for the first error, `sort | uniq -c | sort -rn | head` for repeated lines, grep for reset reasons. Grep a vendor driver for an error string. Never an agent for these.
+- Free model (`opencode run`, read-only brief): find a value in a long datasheet (convert the PDF to text first), summarise a log that the commands above did not explain.
+- Free model (`opencode run`, exact brief): write the simulator, sniffer or soak script from your spec. Employer/client code: write it yourself or use one Claude agent.
+- Images (board photo, scope shot) → look at it yourself; that is one image, not an agent job.
 
 **Knowledge base:** if `~/.claude/workspace-registry.txt` exists, first look up the owner's hardware, installed tools, preferences and past lessons in `<that path>/knowledge/` (start at `INDEX.md`) yourself with Grep (no agent spawn), ask only what is missing, never reinstall what the registry shows as installed, and write new facts back with `shreyas-workspace-replicate:kb`.
