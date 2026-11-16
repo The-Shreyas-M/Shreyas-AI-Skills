@@ -5,8 +5,10 @@ Keep under 60 lines. Replace old content; git keeps the history.
 ## Start line (owner pastes this to run a sprint unattended)
 
 ```
-/goal Every task in the current sprint of TODO.md is ticked with evidence and the sprint's Done-when checks pass in shown output, or a CHECKPOINT or BLOCKED entry for the owner is at the top of HANDOFF.md. Stop after 60 turns.
+/goal Every task in the current sprint of TODO.md is ticked with evidence and the sprint's Done-when checks pass in shown output, or a CHECKPOINT or BLOCKED entry for the owner is at the top of HANDOFF.md. Stop after 40 turns.
 ```
+
+**Open a new session for every sprint, on Sonnet or Opus (not the top model).** A long session re-reads itself every turn and is the biggest cost.
 
 If `/goal` is not available: type `/sprint` (this repo's own skill — works in cloud sessions too).
 

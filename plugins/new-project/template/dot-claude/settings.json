@@ -7,6 +7,13 @@
           { "type": "command", "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/agent-gate.sh\"" }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/context-guard.sh\"" }
+        ]
+      }
     ]
   }
 }

@@ -15,11 +15,20 @@ The owner's plan has a usage limit. What things cost against it:
 
 | Action | Cost against the plan |
 |---|---|
+| **Every turn you take** | **re-reads the whole conversation so far** — 80k tokens in a new session, 300k+ after a few hours. On a top model this is the largest cost of all (measured: 84% of a bill) |
 | A tool call you make yourself (grep, read 50 lines, one edit, run a command) | hundreds of tokens |
 | `opencode run` with a free model | **zero** — it is not Claude |
 | Spawning any Claude subagent (`scout`, `scribe`, `builder`, any haiku/sonnet agent) | **60,000–170,000 tokens each, even for a five-minute job** (measured) |
 
 So: **opencode writes, you brief and verify, Claude subagents are the exception.** Free models are smart when the brief is exact; a bad result almost always means a vague brief.
+
+### Keep the orchestrator cheap
+
+- **Model:** run this loop on Sonnet or Opus. The top model (Fable / Mythos class) is for the interview, spec, design and reviews only. If you are the top model when a sprint starts, say so in one line and ask the owner whether to switch first.
+- **One sprint per session.** When the sprint ends, or the context guard speaks (a hook prints a CONTEXT GUARD notice past ~200k tokens), update `HANDOFF.md` and `TODO.md` and tell the owner to open a new session. Never roll into the next sprint in the same session.
+- **After a pause of an hour or more, do not resume a big session** — the cache has expired and the whole context is paid for again. `HANDOFF.md` exists so a new session can start cold.
+- **Keep things out of your context:** `tail` logs instead of reading them, read only the lines you will edit, look at an image only when a check needs it, and do not repeat file contents in your replies.
+- **A Claude subagent for a Claude-only tool** (for example reading pages in the owner's logged-in browser) is **haiku**, briefed to save what it reads into files under `.oc/` and reply in ≤150 words. A free model then reads those files.
 
 ## Shared knowledge base (local sessions)
 

@@ -18,5 +18,6 @@ Command and brief format: docs/WORKFLOW.md -> "Running opencode". That is what "
 A Claude subagent is allowed only for: (1) opencode failed its failure ladder on this task, (2) client/employer
 code, (3) the task needs a Claude-only tool you cannot use yourself. If one applies, write the task and the
 reason in one line into .oc/ALLOW_CLAUDE_AGENT, tell the owner, spawn once, then delete that file.
+For case (3) use model haiku: brief it to save what it reads into files under .oc/ and reply in 150 words.
 EOF
 exit 2

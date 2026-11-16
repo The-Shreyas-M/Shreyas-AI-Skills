@@ -12,6 +12,7 @@ argument-hint: "[what to do next, or a change request]"
 
 Plugin root: `${CLAUDE_PLUGIN_ROOT}`
 
+0. **Model and session check — before any work.** This loop is built to run on **Sonnet or Opus, in a fresh session**. Every turn re-reads the whole conversation, so the orchestrator is the largest cost (measured: a 3-hour top-model session grew from 77k to 360k tokens per turn and was 84% of the bill). If you are the top-tier model (Fable / Mythos class), or this session already holds earlier work, tell the owner in one line and ask: switch model / open a new session, or stay? Continue only after the answer. The top model is for the interview, spec, design and reviews.
 1. **Check the folder** (one command): do `docs/WORKFLOW.md`, `TODO.md`, `HANDOFF.md`, `.claude/agents/` exist?
    - **All there** → go to step 2.
    - **Missing** → run the `new-project:adopt` skill first. It adds the files without overwriting anything and asks only for what is missing.
@@ -22,15 +23,17 @@ Plugin root: `${CLAUDE_PLUGIN_ROOT}`
    cp "$R/docs/WORKFLOW.md" docs/WORKFLOW.md
    cp "$R"/dot-claude/agents/*.md .claude/agents/
    cp "$R/dot-claude/skills/sprint/SKILL.md" .claude/skills/sprint/SKILL.md
-   cp "$R/dot-claude/hooks/agent-gate.sh" .claude/hooks/agent-gate.sh
-   [ -f .claude/settings.json ] || cp "$R/dot-claude/settings.json" .claude/settings.json
+   cp "$R"/dot-claude/hooks/*.sh .claude/hooks/
+   S=.claude/settings.json   # ours alone (or absent) -> replace; has the owner's own settings -> ask for a merge
+   if [ ! -f "$S" ] || { ! grep -q -E '"(permissions|env|mcpServers|enabledPlugins|statusLine|model)"' "$S" && [ "$(grep -c '"command"' "$S")" = "$(grep -c -E 'agent-gate|context-guard' "$S")" ]; }; then cp "$R/dot-claude/settings.json" "$S"; fi
    grep -qx '.oc/' .gitignore 2>/dev/null || printf '\n.oc/\n' >> .gitignore
-   grep -q 'agent-gate' .claude/settings.json || echo "MERGE NEEDED: add the PreToolUse hook from $R/dot-claude/settings.json into .claude/settings.json"
+   { grep -q agent-gate "$S" && grep -q context-guard "$S"; } || echo "MERGE NEEDED: add both hooks from $R/dot-claude/settings.json into $S"
    ```
-   Then, by hand: if it printed MERGE NEEDED, merge the hook entry; add the worker line from the template `CLAUDE.md` ("Start here" item 1) to the project's `CLAUDE.md` if it is missing; tag every open task in `TODO.md` with `[oc]`, `[me]` or `[tool]`. The hook takes effect in the next session — tell the owner.
+   Then, by hand: if it printed MERGE NEEDED, merge the two hook entries; add the worker line from the template `CLAUDE.md` ("Start here" item 1) to the project's `CLAUDE.md` if it is missing; tag every open task in `TODO.md` with `[oc]`, `[me]` or `[tool]`. The hooks are normally live at once; if a Claude subagent still spawns unblocked, tell the owner to restart the session.
 3. Read `docs/WORKFLOW.md`, `HANDOFF.md`, `TODO.md` and follow the workflow from "Session start". Routing is opencode first: you write exact briefs, free models write the code, you verify; Claude subagents only as escalation. If `CLAUDE.md` → Confidential is unfilled, settle it before delegating anything.
 4. If the owner gave an argument, treat it as a **change request** (WORKFLOW → Change requests): log it, update SPEC, re-plan the affected tasks, then continue.
 5. No current sprint left → plan the next one from SPEC priorities (3–7 tasks, each with an R-id and a check), show it in ≤8 lines, and start on a yes.
 6. To run unattended, give the owner the start line from `HANDOFF.md` to paste.
+7. **One sprint per session.** When the sprint ends, update `HANDOFF.md` and `TODO.md` and tell the owner to open a new session for the next one.
 
 Existing project rules (commit policy, confidentiality, "do not touch" areas) always win over the template.
