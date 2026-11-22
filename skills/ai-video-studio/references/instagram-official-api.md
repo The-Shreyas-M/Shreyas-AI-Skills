@@ -20,8 +20,7 @@ Time: about 30 minutes the first time and 5 minutes per extra account. The owner
 
 ## Step 2: Get one token per Instagram account
 
-These are the steps that were *instructed*. On the reference project the owner finished the setup through Business Suite / the business portfolio with a second email, and the tokens came back as SYSTEM_USER tokens. The exact clicks were not recorded. If the button below is missing, look for **Business settings → Users → System users → Generate new token** (choose the app and the two permissions) and record what worked here.
-
+Confirmed on the reference project: these clicks on the **Unified login** page (after the business portfolio existed) produced `EAA…` SYSTEM_USER tokens that never expire.
 
 1. **API setup with Unified login → Generate access tokens → Add account.** Log in as the Instagram account, then allow both permissions.
 2. Click **Generate token** next to it and copy the token straight into the env file. Never paste it into a chat.
