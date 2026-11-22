@@ -31,7 +31,7 @@ Confirmed on the reference project: these clicks on the **Unified login** page (
 
 | Token starts with | Host (`api_host`) | Expires? | Local file upload? |
 |---|---|---|---|
-| `EAA…` (Facebook Login for Business / business portfolio; often a SYSTEM_USER token) | `graph.facebook.com` | SYSTEM_USER tokens never expire (confirm with the debug check below) | **expected yes** per Meta docs (resumable upload to rupload.facebook.com, Facebook Login for Business apps); unproven on the reference project until the first real upload, so keep `upload: "url"` as the fallback |
+| `EAA…` (Facebook Login for Business / business portfolio; often a SYSTEM_USER token) | `graph.facebook.com` | SYSTEM_USER tokens never expire (confirm with the debug check below) | yes for NORMAL reels only. **Tested 2026-11-22: a resumable (local) upload with `trial_params` was published as a normal reel, with no error.** Trial reels need `upload: "url"` (Instagram downloads the file), as in Meta's own trial example |
 | `IG…` (plain Instagram Login) | `graph.instagram.com` | 60 days; refresh before then | **no**: Instagram downloads the video from a public URL (`upload: "url"` + `public_url_base`) |
 
 On the reference project, the business-portfolio route produced `EAA…` SYSTEM_USER tokens that never expire. That is the easiest case.
@@ -64,7 +64,7 @@ To check token type and expiry without printing the token, ask Claude to call `G
 ```json
 "main-ig": {"platform": "ig", "user_id_env": "IG_API_USER_ID_MAIN", "token_env": "IG_API_TOKEN_MAIN",
             "expected_username": "your_handle", "api_host": "graph.facebook.com", "api_version": "v23.0",
-            "trial": true, "trial_graduation": "MANUAL", "upload": "local", "max_late_minutes": 360}
+            "trial": true, "trial_graduation": "MANUAL", "upload": "url", "public_url_base": "https://your-public-host/reels", "max_late_minutes": 360}
 ```
 
 - `trial: true` (default) posts every reel as a **Trial Reel**, which is shown to non-followers first. `trial_graduation`: `MANUAL` means you share it to followers yourself. `SS_PERFORMANCE` means Instagram shares it automatically if it performs well.
@@ -92,7 +92,7 @@ Failures:
 - The business portfolio can be created with a different email from the developer login. That is fine.
 - A token's host must match its type (see the table above). Using the wrong host returns "Invalid OAuth access token".
 - Development-mode apps: the first real trial reel is the test. Confirm from another account that a non-follower can see it, and that the app labels it a trial.
-- Publishing a trial reel through `trial_params` is documented, but on the reference project it was not yet proven end to end. Treat the first post as a checkpoint.
+- **Trial reels + local upload = NORMAL reel** (silently, 2026-11-22). `post.py` now refuses that combination. Use `upload: "url"` for trials, and test the first one on your least important account. The API has no field that reports trial status: check the app (Professional dashboard → Trial reels).
 
 ## Security
 

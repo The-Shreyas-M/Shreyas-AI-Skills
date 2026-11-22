@@ -393,6 +393,9 @@ def ig_run(items, c, maxn, execute, name):
             print("   (dry-run: nothing sent)")
             done += 1
             continue
+        if want_trial and upload == "local":  # seen 2026-11-22: resumable upload + trial_params published a NORMAL reel
+            sys.exit("HALT: Instagram ignored trial_params on a resumable (local) upload and published a normal reel. "
+                     "For trial reels set upload \"url\" + public_url_base in accounts.json. Nothing was posted.")
         if ig is None:  # account guard BEFORE any claim, so a halt leaves the ledger untouched
             uid = os.environ.get(user_id_env) if user_id_env else None
             tok = os.environ.get(token_env) if token_env else None
