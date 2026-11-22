@@ -2,6 +2,6 @@
   "accounts": {
     "my-channel": {"platform": "yt", "token_file": "token_my-channel.json", "expected_channel": "EXACT CHANNEL TITLE"},
     "second-yt":  {"platform": "yt", "token_file": "token_second.json",  "expected_channel": "EXACT CHANNEL TITLE"},
-    "main-ig":    {"platform": "ig", "username_env": "IG_USER_MAIN", "password_env": "IG_PASS_MAIN", "session_file": "ig_main.json", "trial": true, "trial_graduation": "manual"}
+    "main-ig":    {"platform": "ig", "user_id_env": "IG_API_USER_ID_MAIN", "token_env": "IG_API_TOKEN_MAIN", "expected_username": "your_handle", "api_host": "graph.facebook.com", "api_version": "v23.0", "trial": true, "trial_graduation": "MANUAL", "upload": "local", "max_late_minutes": 360}
   }
 }

@@ -22,7 +22,7 @@ If the user gave arguments, infer both answers. Otherwise ask with ONE `AskUserQ
 | No footage: graph / map route / exploded view / minimal line art reel | `.../claude-animation-skills/skills/graph|map-route|breakdown|minimalistic-graphics/SKILL.md` |
 | Launch video of a project or website (music, motion, share copy) | `~/.claude/tools/brag/skills/brag-slim/SKILL.md` |
 | Titles, descriptions, tags, thumbnails, content strategy | skill `youtube` |
-| Schedule / post (one or 40 clips) | workspace `posting/README.md` and `ai-video-studio` |
+| Schedule / post (one or 40 clips) | workspace `posting/README.md` and `ai-video-studio`. Instagram = official Graph API only, setup: `~/.claude/skills/ai-video-studio/references/instagram-official-api.md` (never instagrapi) |
 Faceless details and voice options: `references/faceless.md`. If a module folder is missing, run `python ~/.claude/skills/ai-video/scripts/install_modules.py`.
 
 ## Step 3: the standard pipeline (every route)

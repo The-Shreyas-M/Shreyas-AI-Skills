@@ -38,7 +38,7 @@ if "--no-venv" not in sys.argv:
         print("creating posting venv ...")
         venv.create(v, with_pip=True)
     subprocess.run([str(py), "-m", "pip", "install", "-q", "google-api-python-client", "google-auth-oauthlib", "python-dotenv"], check=False)
-    print("posting packages ready (instagrapi is optional: Tools/.venv pip install instagrapi)")
+    print("posting packages ready (Instagram uses the official API, no extra package: see references/instagram-official-api.md)")
 
 skills = Path.home() / ".claude" / "skills"
 for s in ("ai-video", "clip-video", "shorts-from-main-video", "youtube", "ai-video-studio"):

@@ -1,4 +1,4 @@
-"""Safe, idempotent poster/scheduler: YouTube (official API, Shorts + long) and Instagram Reels (optional).
+"""Safe, idempotent poster/scheduler: YouTube (official API, Shorts + long) and Instagram Reels (official Graph API, publishes when due: run it at/after each slot).
 
 Design rules (a previous runner posted the same reel 2-4 times, so these are not optional):
   1. One job = (platform, queue id, file content-hash). The SQLite ledger has a UNIQUE key on it.
@@ -12,7 +12,7 @@ Design rules (a previous runner posted the same reel 2-4 times, so these are not
 Commands (workspace python, run from anywhere):
   post.py accounts                          list named accounts (posting/accounts.json)
   post.py auth --account NAME               one-time YouTube login for that account (the OWNER does it)
-  post.py whoami --account NAME             print the YouTube channel that account's token controls
+  post.py whoami --account NAME             print the YouTube channel / Instagram @username that account's token controls
   post.py add <video> --accounts a,b --title T --description D [--tags a,b] --when "2026-11-20 19:30"
   post.py import schedule.csv [--start 2026-11-20 --times 07:30,19:30 --per-day 2]   bulk add (40 clips etc.)
   post.py add ... --related <main-video id|url>   link a clipped Short to its main video (description link + Studio checklist)
@@ -26,6 +26,9 @@ Commands (workspace python, run from anywhere):
 import argparse, hashlib, json, os, random, re, sqlite3, sys, time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from ig_graph import IG, IGError, _redact          # official Instagram Graph API client (stdlib only, same folder)
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 HERE = Path(__file__).resolve().parent
@@ -41,7 +44,6 @@ except Exception:
 
 YT_SCOPE = ["https://www.googleapis.com/auth/youtube"]
 YT_MIN_LEAD = timedelta(minutes=15)
-IG_MIN_LEAD = timedelta(minutes=25)
 IG_PAUSE = (25, 45)
 YT_PAUSE = (20, 40)
 
@@ -347,27 +349,29 @@ def yt_run(items, c, maxn, execute, name):
     return done
 
 
-# ---------------------------------------------------------------- Instagram (optional, unofficial)
+# ---------------------------------------------------------------- Instagram (official Graph API)
 def ig_run(items, c, maxn, execute, name):
     a = acct(name)
-    try:
-        from instagrapi import Client
-    except Exception:
-        sys.exit("instagrapi not installed (optional): Tools/.venv/Scripts/pip install instagrapi")
-    cl = Client()
-    sess = Path(a.get("session_file", "ig_session.json"))
-    sess = sess if sess.is_absolute() else HERE / sess
-    if sess.exists():
-        cl.load_settings(sess)
-    cl.login(os.environ[a.get("username_env", "IG_USERNAME")], os.environ[a.get("password_env", "IG_PASSWORD")])
-    cl.dump_settings(sess)
-    import inspect
-    trial_default = a.get("trial", True)  # Instagram TRIAL REELS: shown to non-followers first (discovery), not to your followers
-    grad = a.get("trial_graduation", "manual")
-    if "trial" not in inspect.signature(cl.clip_upload).parameters:
-        sys.exit("HALT: your instagrapi has no Trial Reel support. Upgrade: Tools/.venv pip install -U 'instagrapi>=3.2'")
-    eligible = None
+    if (a.get("username_env") or a.get("password_env")) and not a.get("token_env"):
+        sys.exit("HALT: Instagram now uses the official API; instagrapi was removed. Set user_id_env/token_env/expected_username in accounts.json (see the skill's references/instagram-official-api.md). Nothing was posted.")
+    user_id_env = a.get("user_id_env")
+    token_env = a.get("token_env")
+    expected_username = a.get("expected_username", "")
+    api_host = a.get("api_host", "graph.facebook.com")
+    api_version = a.get("api_version", "v23.0")
+    trial_default = a.get("trial", True)
+    trial_graduation_default = str(a.get("trial_graduation", "MANUAL")).upper()
+    upload = a.get("upload", "local")
+    public_url_base = a.get("public_url_base")
+    max_late = a.get("max_late_minutes", 360)
+    if upload not in ("local", "url"):
+        sys.exit(f"HALT: accounts.json upload must be \"local\" or \"url\", not {upload!r}. Nothing was posted.")
+    if upload == "url" and not public_url_base:
+        sys.exit("HALT: upload \"url\" needs public_url_base in accounts.json. Nothing was posted.")
+
     done = 0
+    ig = None
+    token = None
     for it in items:
         st = get(c, name, jid(it))
         if st and st["state"] != "FAILED_SAFE":
@@ -375,36 +379,66 @@ def ig_run(items, c, maxn, execute, name):
         if done >= maxn:
             break
         when = when_dt(it)
-        if when - datetime.now(tz()) < IG_MIN_LEAD:
-            print(f"[SKIP] {it['id']}: Instagram needs >= 25 min lead")
+        now_ = datetime.now(tz())
+        if when > now_:
+            print(f"[WAIT] {it['id']}: due {when:%a %d %b %H:%M}")
+            continue
+        if now_ - when > timedelta(minutes=max_late):
+            print(f"[LATE] {it['id']}: more than {max_late} min past its slot, not posted; give it a new --when")
             continue
         cap = it.get("ig_caption") or (it.get("title", "") + "\n\n" + it.get("description", ""))
         want_trial = it.get("trial", trial_default)
-        print(f"[{done + 1}] {name} {it['id']} | schedule {when:%a %d %b %H:%M} | {'TRIAL reel (non-followers first)' if want_trial else 'normal reel (shown to followers)'}")
-        if execute and want_trial and eligible is None:
-            try:
-                eligible = bool(cl.clip_trial_eligible())
-            except Exception as e:
-                eligible = False
-                print(f"   could not confirm Trial Reel eligibility: {type(e).__name__}: {e}")
-            if not eligible:
-                sys.exit("HALT: this Instagram account is not eligible for Trial Reels (needs a professional account with the feature enabled). "
-                         "Nothing was posted. Set \"trial\": false in accounts.json only if you really want normal reels.")
+        print(f"[{done + 1}] {name} {it['id']} | publish now {when:%a %d %b %H:%M} | {'TRIAL reel (non-followers first)' if want_trial else 'normal reel (shown to followers)'}")
         if not execute:
-            print("   (dry-run: no upload)")
+            print("   (dry-run: nothing sent)")
             done += 1
             continue
+        if ig is None:  # account guard BEFORE any claim, so a halt leaves the ledger untouched
+            uid = os.environ.get(user_id_env) if user_id_env else None
+            tok = os.environ.get(token_env) if token_env else None
+            if not uid:
+                sys.exit(f"HALT: missing environment variable {user_id_env}. Nothing was posted.")
+            if not tok:
+                sys.exit(f"HALT: missing environment variable {token_env}. Nothing was posted.")
+            if not expected_username:
+                sys.exit("HALT: set expected_username in accounts.json (see `post.py whoami`). Nothing was posted.")
+            token = tok
+            ig = IG(uid, tok, host=api_host, version=api_version)
+            try:
+                got = ig.username().lstrip("@").lower()
+            except Exception as e:
+                sys.exit(f"HALT: could not read the token's username ({type(e).__name__}: {_redact(str(e), tok)}). Nothing was posted.")
+            if got != expected_username.lstrip("@").lower():
+                sys.exit(f"HALT: token controls @{got}, accounts.json expects @{expected_username}. Nothing was posted.")
         if not claim(c, name, it):
             continue
+        grad_val = trial_graduation_default if want_trial else None
         try:
-            extra = cl._scheduled_extra_data({}, when)
-            media = cl.clip_upload(path=vpath(it), caption=cap, extra_data=extra, trial=bool(want_trial), trial_graduation_strategy=grad)
-            setstate(c, name, it, "DONE", remote_id=str(media.pk), note=f"scheduled {when.isoformat()}{' trial' if want_trial else ''}")
-            print(f"   scheduled OK, media {media.pk}")
+            if upload == "local":
+                cid, uri = ig.create_reel_resumable(cap, grad_val)
+                ig.upload_file(uri, vpath(it))
+            else:
+                video_url = public_url_base.rstrip("/") + "/" + Path(vpath(it)).name
+                cid = ig.create_reel_from_url(video_url, cap, grad_val)
+            ig.wait_finished(cid)
+        except Exception as e:
+            note = _redact(str(e), token)[:80]
+            setstate(c, name, it, "FAILED_SAFE", note=note)
+            print(f"   FAILED_SAFE: {type(e).__name__}: {_redact(str(e), token)}")
+            continue
+        try:
+            media_id = ig.publish(cid)
         except Exception as e:
             setstate(c, name, it, "AMBIGUOUS", note=type(e).__name__)
-            print(f"   HALT (ambiguous, check Instagram before retrying): {type(e).__name__}: {e}")
+            print(f"   HALT (ambiguous: check the Instagram app before retrying): {type(e).__name__}: {_redact(str(e), token)}")
             return done
+        note = "published {}{}".format(now_.isoformat(), (" trial " + grad_val) if want_trial else "")
+        setstate(c, name, it, "DONE", remote_id=media_id, note=note)
+        print(f"   media id: {media_id}")
+        try:
+            print(f"   {ig.permalink(media_id)}")
+        except Exception as e:
+            print(f"   warning: permalink failed: {type(e).__name__}")
         done += 1
         if done < maxn:
             time.sleep(random.uniform(*IG_PAUSE))
@@ -492,8 +526,22 @@ def main():
         print("token saved:", tf, "-> now run `whoami --account", args.account + "` and set expected_channel in accounts.json")
     elif args.cmd == "whoami":
         a_ = acct(args.account)
-        cid, title = yt_channel(yt_service(a_))
-        print(f"account {args.account}: token controls channel '{title}' ({cid}); expected_channel: {a_.get('expected_channel') or '(not set)'}")
+        if kind(args.account) == "ig":
+            user_id_env = a_.get("user_id_env")
+            token_env = a_.get("token_env")
+            uid = os.environ.get(user_id_env) if user_id_env else None
+            tok = os.environ.get(token_env) if token_env else None
+            if not uid:
+                sys.exit(f"HALT: missing environment variable {user_id_env}. Nothing was posted.")
+            if not tok:
+                sys.exit(f"HALT: missing environment variable {token_env}. Nothing was posted.")
+            ig = IG(uid, tok, host=a_.get("api_host", "graph.facebook.com"), version=a_.get("api_version", "v23.0"))
+            username = ig.username()
+            print(f"account {args.account}: token controls @{username}; expected_username: {a_.get('expected_username') or '(not set)'}")
+            print(ig.quota())
+        else:
+            cid, title = yt_channel(yt_service(a_))
+            print(f"account {args.account}: token controls channel '{title}' ({cid}); expected_channel: {a_.get('expected_channel') or '(not set)'}")
     elif args.cmd == "add":
         p = Path(args.video).resolve()
         it = {"id": args.id or slug(p), "file": rel(p), "accounts": [x.strip() for x in args.accounts.split(",")],
