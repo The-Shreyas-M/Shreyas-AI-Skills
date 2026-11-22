@@ -20,6 +20,9 @@ Time: about 30 minutes the first time and 5 minutes per extra account. The owner
 
 ## Step 2: Get one token per Instagram account
 
+These are the steps that were *instructed*. On the reference project the owner finished the setup through Business Suite / the business portfolio with a second email, and the tokens came back as SYSTEM_USER tokens. The exact clicks were not recorded. If the button below is missing, look for **Business settings → Users → System users → Generate new token** (choose the app and the two permissions) and record what worked here.
+
+
 1. **API setup with Unified login → Generate access tokens → Add account.** Log in as the Instagram account, then allow both permissions.
 2. Click **Generate token** next to it and copy the token straight into the env file. Never paste it into a chat.
 3. Copy the account's **numeric Instagram user id**. If the page shows a different kind of id, use the read-only check in step 4. The right id is the one where `/<id>?fields=username` returns that account's handle.
@@ -29,7 +32,7 @@ Time: about 30 minutes the first time and 5 minutes per extra account. The owner
 
 | Token starts with | Host (`api_host`) | Expires? | Local file upload? |
 |---|---|---|---|
-| `EAA…` (Facebook Login for Business / business portfolio; often a SYSTEM_USER token) | `graph.facebook.com` | SYSTEM_USER tokens never expire (confirm with the debug check below) | **yes**: resumable upload, no public URL needed |
+| `EAA…` (Facebook Login for Business / business portfolio; often a SYSTEM_USER token) | `graph.facebook.com` | SYSTEM_USER tokens never expire (confirm with the debug check below) | **expected yes** per Meta docs (resumable upload to rupload.facebook.com, Facebook Login for Business apps); unproven on the reference project until the first real upload, so keep `upload: "url"` as the fallback |
 | `IG…` (plain Instagram Login) | `graph.instagram.com` | 60 days; refresh before then | **no**: Instagram downloads the video from a public URL (`upload: "url"` + `public_url_base`) |
 
 On the reference project, the business-portfolio route produced `EAA…` SYSTEM_USER tokens that never expire. That is the easiest case.
@@ -55,7 +58,7 @@ post.py whoami --account main-ig
 
 It prints which `@username` the token controls and the 24-hour publishing quota (100 posts per 24 h per account). Posting halts if the username does not equal `expected_username`.
 
-To check token type and expiry without printing the token, ask Claude to call `GET /debug_token?input_token=<token>` with `access_token=<APP_ID>|<APP_SECRET>` and print only `type`, `is_valid`, `expires_at` and `scopes`.
+To check token type and expiry without printing the token, ask Claude to call `GET /debug_token?input_token=<token>` with `access_token=<APP_ID>|<APP_SECRET>` and print only `type`, `is_valid`, `expires_at` and `scopes`. This is the one call that must carry secrets in the URL (Meta's design): run it from a script, never with `curl -v`, and never log the URL.
 
 ## Step 5: accounts.json entry
 
