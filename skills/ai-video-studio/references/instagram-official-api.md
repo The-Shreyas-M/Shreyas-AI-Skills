@@ -92,7 +92,7 @@ Failures:
 - The business portfolio can be created with a different email from the developer login. That is fine.
 - A token's host must match its type (see the table above). Using the wrong host returns "Invalid OAuth access token".
 - Development-mode apps: the first real trial reel is the test. Confirm from another account that a non-follower can see it, and that the app labels it a trial.
-- **Trial reels + local upload = NORMAL reel** (silently, 2026-11-22). `post.py` now refuses that combination. Use `upload: "url"` for trials, and test the first one on your least important account. The API has no field that reports trial status: check the app (Professional dashboard → Trial reels).
+- **Trial reels + local upload = NORMAL reel** (silently, 2026-11-22). `post.py` now refuses that combination. Use `upload: "url"` for trials, and test the first one on your least important account. Check right after publishing: `GET /<media_id>?fields=is_shared_to_feed` was `True` for the wrongly normal reels and `False` for real trial reels (url route, 2026-11-22). Stop if it is not `False`. Public video URL that worked: Google Drive via rclone, `rclone link` → `https://drive.usercontent.google.com/download?id=<id>&export=download&confirm=t` (serves `video/mp4`).
 
 ## Security
 
