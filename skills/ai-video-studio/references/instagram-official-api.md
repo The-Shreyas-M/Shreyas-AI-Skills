@@ -68,7 +68,7 @@ To check token type and expiry without printing the token, ask Claude to call `G
 ```
 
 - `trial: true` (default) posts every reel as a **Trial Reel**, which is shown to non-followers first. `trial_graduation`: `MANUAL` means you share it to followers yourself. `SS_PERFORMANCE` means Instagram shares it automatically if it performs well.
-- `upload: "url"` (needed for `IG…` tokens) also needs `public_url_base`, a public HTTPS folder where the same file name is reachable. Examples: a Cloudflare Worker that proxies Google Drive, or any static host. The URL must return `video/mp4`.
+- `upload: "url"` (needed for `IG…` tokens) also needs `public_url_base`, a public HTTPS folder where the same file name is reachable. Google Drive's direct download URL works (see the Worker section below), as does any static host. The URL must return `video/mp4`.
 - Old entries with `username_env`/`password_env` (instagrapi) now halt with a pointer to this file.
 
 ## How posting works now (it differs from YouTube)
@@ -77,7 +77,33 @@ The API has **no scheduled-publish option**. A reel goes live when `post.py run 
 
 - Items not yet due print `[WAIT]`.
 - Items more than `max_late_minutes` past their slot print `[LATE]` and are skipped, so a late run never dumps a backlog. Give them a new `--when`.
-- To post at each slot, run the command at or after each slot. Use Windows Task Scheduler only if the owner wants it, or a small always-on runner (the reference project uses a free Cloudflare Worker cron). The PC must be on for local runs.
+- To post at each slot, run the command at or after each slot. The PC must be on for local runs. To post with the laptop off, use the free Cloudflare Worker below (recommended for anything longer than a few days).
+
+## Always-on posting with a free Cloudflare Worker (laptop off)
+
+Proven in a live project in 2026 (4 Instagram accounts, 1,900+ queued reels). Free plan, no card. The laptop renders and uploads once; after that the Worker posts everything.
+
+**Pieces**
+1. **Video hosting: Google Drive.** `rclone copy <renders> gdrive:<folder>/reels --include "*.mp4"`. Share the **folder** once as "anyone with the link"; every file inside inherits it (no per-file `rclone link`). Each file's URL is `https://drive.usercontent.google.com/download?id=<FILE_ID>&export=download&confirm=t`, which returns `video/mp4` with no login. Get the ids with `rclone lsjson gdrive:<folder>/reels`. Free Drive is 15 GB; about 2,000 short reels used under 5 GB. **Before a bulk upload, create your own Google OAuth client_id for rclone** (free, about 10 min): rclone's shared client is rate-limited project-wide (Drive 403 `RATE_LIMIT_EXCEEDED`), and we saw about 1 file per minute at worst. Upload in posting-date order, so a slow upload still covers the first days.
+2. **Cloudflare account:** an API token with *Workers Scripts: Edit*, *Workers KV Storage: Edit* and *Account Settings: Read*, plus the account id, both in the git-ignored env file as `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. `wrangler` (npm) reads them from the environment, so there is no `wrangler login`. Pick a workers.dev subdomain once in the dashboard.
+3. **KV namespace** (one, for example `wa_state`, binding `WA`). Keys:
+   - `q:YYYY-MM-DD` (local posting date) → array of `{id, slot, handle, at (unix UTC seconds), video_id, caption}`.
+   - `led:<slot>:<id>` → `{state: container | publishing | posted | ambiguous, container_id, media_id, permalink}`, written only by the Worker.
+   - `halt:<slot>` → a reason; while present, that account is never touched.
+4. **Worker** (plain JS module, cron `*/5 * * * *`, var `DRY_RUN` where only `"0"` means live). Secrets per account via `wrangler secret put TOKEN_<slot>` and `UID_<slot>`. Each run, for each due item (`at <= now`), at most **one action per account**:
+   - no ledger entry → `GET /<uid>?fields=username` must equal the item's handle (a mismatch writes a halt; a network error just retries) → `POST /<uid>/media` with `media_type=REELS`, `video_url`, `caption`, `trial_params` → ledger `container`.
+   - `container` → `GET /<container>?fields=status_code`; on `FINISHED` write `publishing` **first**, then `media_publish`, then `GET /<media>?fields=is_shared_to_feed,permalink` → ledger `posted`. If `is_shared_to_feed` is not `false`, write a halt (it went out as a normal reel). A publish error → `ambiguous` + halt, **never retried** (check the app by hand). `ERROR`/`EXPIRED` → delete the ledger entry so the next run makes a fresh container.
+   - more than 2 h past its slot with no ledger entry → skipped (no backlog dumps).
+   - a `/status` route returns today's items, their states and any halts (no secrets).
+   Test it in Node with a fake KV and fake fetch before deploying; then do one live dry tick (`DRY_RUN="1"`) that only checks each username, and switch to `"0"` on the owner's yes.
+5. **Filling the queue:** a laptop script turns the content plan plus the Drive ids into wrangler bulk format (`[{key, value}]`), then `wrangler kv bulk put queue.json --binding WA --remote`. Seed `led:` keys as `posted` for reels that are already live, so they are never posted twice.
+
+**Rules that keep it safe**
+- The Worker writes only `led:` and `halt:` keys, never `q:` keys. So adding reels later means rebuilding the queue and putting **only the `q:` days that changed**. Diff each day against `wrangler kv key get` first: only the new items may differ. Never re-put `led:` seeds over a live queue.
+- Do not put a day's key within a few minutes of one of its posting slots.
+- A KV read just after a put can show the old value for about 60 s (edge cache). Read again before you worry.
+- Clear a halt by hand only after checking the app: `wrangler kv key delete halt:<slot> --binding WA --remote`.
+- The first real post through the Worker is the proof: open `/status` after its slot and confirm the Trial label in the app.
 
 The flow per reel: create container (`media_type=REELS`, caption, `trial_params`) → upload the bytes (local) or let Instagram fetch the URL → wait until `status_code` is `FINISHED` → `media_publish`.
 
