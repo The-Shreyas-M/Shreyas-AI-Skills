@@ -14,6 +14,8 @@ argument-hint: "[change request or 'next']"
 1. Read `docs/WORKFLOW.md` fully, then `HANDOFF.md` and `TODO.md`.
 2. If an argument was given, handle it as a change request first (WORKFLOW → Change requests).
 3. If the current sprint is finished and the owner has answered the checkpoint, plan the next sprint (3–7 tasks, each with an R-id from `docs/SPEC.md` and a check) and show it in ≤8 lines.
-4. Run the loop in `docs/WORKFLOW.md` — this sprint only, then update `HANDOFF.md` and tell the owner to open a new session for the next one — until the sprint's Done-when checks pass or a CHECKPOINT/BLOCKED entry is written in `HANDOFF.md`.
+4. Independent `[oc]` tasks on different files: dispatch up to 3 at once (WORKFLOW → "Running several opencode jobs at once").
+5. When something in a skill or WORKFLOW caused friction, add one line to `docs/SKILL-FEEDBACK.md`; at the checkpoint, list the proposed skill changes for the owner's OK and apply only the approved ones (WORKFLOW → "Improving the skills").
+6. Run the loop in `docs/WORKFLOW.md` — this sprint only, then update `HANDOFF.md` and tell the owner to open a new session for the next one — until the sprint's Done-when checks pass or a CHECKPOINT/BLOCKED entry is written in `HANDOFF.md`.
 
 In a cloud session there is no free tier and no machine-level skills: start routing at haiku (`scout`, `scribe`) and sonnet (`builder`).

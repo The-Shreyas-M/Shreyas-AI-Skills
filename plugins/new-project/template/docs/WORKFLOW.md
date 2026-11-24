@@ -97,6 +97,21 @@ timeout 600 opencode run -m opencode/beam-free --auto "Do the task described in 
 - The Bash tool's own default timeout is 2 minutes: for a larger brief set the tool timeout to 600000 ms or run the command in the background.
 - Write briefs with the file-writing tool, not a shell heredoc (heredocs with quotes break in this shell).
 
+### Running several opencode jobs at once (tested)
+
+Independent tasks on **different files** run in parallel — free models cost nothing, so this is pure speed. Check first that no two briefs share a file in EDIT ONLY; tasks on the same file, or a task that needs another's result, wait.
+
+```bash
+for t in T3 T4 T5; do
+  ( timeout 600 opencode run -m opencode/beam-free --auto "Do the task described in the file .oc/$t.md. Follow it exactly." </dev/null > .oc/$t.log 2>&1; echo "$t exit=$?" >> .oc/DONE ) &
+done; wait; cat .oc/DONE; rm -f .oc/DONE
+```
+
+- At most **3** at a time (the free tier rate-limits; a 429 in one log means rerun that one alone).
+- Run it with the Bash tool's `run_in_background` (or timeout 600000 ms) and keep doing your own `[me]` work meanwhile.
+- Then check each task separately: its DONE WHEN check, `tail -c 600 .oc/<t>.log`, and `git diff --stat` — one combined diff hides which job broke what.
+- Do not commit until every job in the batch is checked.
+
 ### The exact brief (every opencode run)
 
 ```
@@ -167,7 +182,20 @@ Built: <3 bullets max>
 Please test: <numbered steps the owner can follow, with expected result>
 Need from you: <questions, each with your recommended answer>
 Next sprint (proposed): <task titles>
+Skill improvements — need your OK: <numbered: skill → file → change, why — only if docs/SKILL-FEEDBACK.md has new lines>
 ```
+
+## Improving the skills (owner approves every change)
+
+The skills that run this project (`new-project`, `iot-engineer`, `shreyas-workspace-replicate`, this `WORKFLOW.md`) get better from real use — but **only with the owner's yes, item by item.**
+
+1. **Notice, cheaply.** When a skill instruction caused friction — the owner corrected you, a rule was wrong or missing, a step wasted tokens, a tested command failed — append **one line** to `docs/SKILL-FEEDBACK.md` yourself (never an agent):
+   `<date> | <skill or file> | what happened | proposed change (one sentence)`
+   No client/employer code or names in these lines.
+2. **Ask at the checkpoint.** At each CHECKPOINT, if the file has new lines, add a section **Skill improvements — need your OK**: numbered, each as *skill → file → the exact change, and why*. Merge duplicates; at most 5 per checkpoint, most costly friction first.
+3. **Apply only what the owner approves.** Edit the skill's **source repo**, never the installed plugin cache (`~/.claude/plugins/...` is overwritten on update). The source repo path is in the knowledge base (`knowledge/workspace.md` → "Personal-skill source repo"); grep for it. Then commit and push there, and run `claude plugin marketplace update <marketplace>` and `claude plugin update <plugin>@<marketplace> --scope user`; the change applies from the next session.
+4. **Record the answer** at the end of each line in `docs/SKILL-FEEDBACK.md`: `→ applied <commit>`, `→ rejected`, or `→ later`. Never propose a rejected item again unless the owner raises it.
+5. **Never** change a skill, hook or `WORKFLOW.md` rule on your own initiative, even a "small fix". Project-only notes (gotchas of this codebase) go in `HANDOFF.md`, not here.
 
 ## Change requests (the owner will change things often — that is normal)
 

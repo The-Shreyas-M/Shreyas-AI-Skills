@@ -16,10 +16,11 @@ Plugin root: `${CLAUDE_PLUGIN_ROOT}`
 1. **Check the folder** (one command): do `docs/WORKFLOW.md`, `TODO.md`, `HANDOFF.md`, `.claude/agents/` exist?
    - **All there** → go to step 2.
    - **Missing** → run the `new-project:adopt` skill first. It adds the files without overwriting anything and asks only for what is missing.
-2. **Refresh the method** if the project's `docs/WORKFLOW.md` is older than `${CLAUDE_PLUGIN_ROOT}/template/docs/WORKFLOW.md`: show the owner a one-line summary of what changed and replace it on a yes. Add missing template files with `cp -n` (agents, `docs/TOOLCHAIN.md`, `.claude/skills/sprint`).
+2. **Refresh the method** if the project's `docs/WORKFLOW.md` is older than `${CLAUDE_PLUGIN_ROOT}/template/docs/WORKFLOW.md`: show the owner a one-line summary of what changed and replace it on a yes. Add missing template files with `cp -n` (agents, `docs/TOOLCHAIN.md`, `docs/SKILL-FEEDBACK.md`, `.claude/skills/sprint`).
    **Always bring the template-owned files up to date** (one shell command, no agent; skip the hook lines on a client/employer project). These files belong to the template, so overwrite them:
    ```bash
    R="${CLAUDE_PLUGIN_ROOT}/template"; mkdir -p .claude/agents .claude/skills/sprint .claude/hooks .oc
+   cp -n "$R/docs/SKILL-FEEDBACK.md" docs/SKILL-FEEDBACK.md 2>/dev/null
    cp "$R/docs/WORKFLOW.md" docs/WORKFLOW.md
    cp "$R"/dot-claude/agents/*.md .claude/agents/
    cp "$R/dot-claude/skills/sprint/SKILL.md" .claude/skills/sprint/SKILL.md
