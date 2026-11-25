@@ -62,6 +62,7 @@ plugin's `references/chips.md` if that plugin is installed. Rules:
 - Never ask what was already answered. Never ask what you can decide yourself and note as an assumption.
 - Stop when every SPEC section can be filled. Usually 4–6 rounds.
 - Push back on scope: for each feature ask "needed for v1?" — anything else goes to Later.
+- **Medium vs quality ceiling** (deliverables judged on visual taste — "insane", "premium", "cinematic", a showpiece): name one real reference at the level wanted, say which medium can reach it (pixel art, rendered 3D, shader pipeline, image-model illustration, hand-written SVG…), and show the owner one quick proof frame in that medium **before** planning sprints. If your own review of a frame says "toy / not there yet", stop and change the medium instead of polishing and presenting it.
 
 ## Phase 4 — Scaffold (cheap)
 

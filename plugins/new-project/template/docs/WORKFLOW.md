@@ -8,6 +8,7 @@ at checkpoints.
 
 1. Read `CLAUDE.md`, `HANDOFF.md`, `TODO.md`. Open `docs/SPEC.md` only for the sections a task needs.
 2. Continue from **Next step** in `HANDOFF.md`. Do not re-plan what is already planned.
+3. **Git baseline (one command, before any worker runs):** if `git rev-parse HEAD` fails or the code is untracked, check `.gitignore` covers secrets and make a local baseline commit (no push) — the per-task verify (`git diff --stat`) sees nothing without one. "Commit only when asked" governs pushes and remotes, not these local commits. If `.gitcp.md` pins an account, `git config user.name` must equal it; on a mismatch set the repo-local identity (`git config user.name <login>`, `git config user.email <id>+<login>@users.noreply.github.com`) before the first commit.
 
 ## Token budget — read this before delegating anything
 
@@ -47,7 +48,7 @@ Repeat until the current sprint's **Done when** list passes:
 1. Take the top unticked task of the current sprint.
 2. **Trace check:** it must cite a SPEC id (`R#`). No id → do not build it; add it to Parking lot.
 3. **Route** it (next section). Writing the brief is your main job.
-4. **Verify yourself:** run the task's check (build, test, curl, screenshot). Run `git diff --stat` and confirm only the intended files changed. A worker saying "done" is not evidence.
+4. **Verify yourself:** run the task's check (build, test, curl, screenshot) and, for worker output, the verify list under "Running opencode" (diff limited to EDIT ONLY files, no git commands in the log, clean file tails). A worker saying "done" is not evidence.
 5. Tick the task in `TODO.md` with one line of evidence. Commit: `S<sprint>-T<task>: <what>`.
 6. After every 3 tasks, and before you stop for any reason, update State / Next step in `HANDOFF.md` yourself (a few lines — never an agent spawn).
 
@@ -92,7 +93,12 @@ timeout 600 opencode run -m opencode/beam-free --auto "Do the task described in 
 ```
 
 - The message comes **first**. `</dev/null` is required. Putting `-f <file>` before the message makes the command hang; to attach an image put `-f <image>` **after** the message.
-- Output goes to the log file; read only the tail. Then run the DONE WHEN check and `git diff --stat` yourself.
+- **Before dispatch: commit (or stash) your own edits, and do not edit tracked files while a worker runs in the same checkout** — a worker has run `git checkout --` on files outside its EDIT ONLY list and silently reverted uncommitted orchestrator work.
+- Output goes to the log file; read only the tail. Then verify it yourself, never from the worker's report:
+  - run the DONE WHEN command;
+  - `git diff --stat` — only the EDIT ONLY files changed;
+  - `grep -nE 'git (checkout|restore|reset|clean|stash)' .oc/<task>.log` prints nothing;
+  - `tail -3 <each written file>` — no leftover chat-template tokens (`<|...|>`) or markdown fences; a junk tail is a one-line fix by you, not a rerun.
 - A run normally takes under a minute. A timeout usually means a malformed command, not a slow model.
 - The Bash tool's own default timeout is 2 minutes: for a larger brief set the tool timeout to 600000 ms or run the command in the background.
 - Write briefs with the file-writing tool, not a shell heredoc (heredocs with quotes break in this shell).
@@ -109,7 +115,8 @@ done; wait; cat .oc/DONE; rm -f .oc/DONE
 
 - At most **3** at a time (the free tier rate-limits; a 429 in one log means rerun that one alone).
 - Run it with the Bash tool's `run_in_background` (or timeout 600000 ms) and keep doing your own `[me]` work meanwhile.
-- Then check each task separately: its DONE WHEN check, `tail -c 600 .oc/<t>.log`, and `git diff --stat` — one combined diff hides which job broke what.
+- Then check each task separately with the full verify list under "Running opencode" (DONE WHEN, `git diff --stat`, the git grep on its log, file tails) — one combined diff hides which job broke what.
+- **Pilot before fan-out:** when several briefs share one pattern (scenes, sprites, slides, pages), run ONE first and look at its output in its real target (the composed scene, the rendered page) before dispatching the rest — code checks pass while the visual composition is wrong.
 - Do not commit until every job in the batch is checked.
 
 ### The exact brief (every opencode run)
@@ -123,12 +130,14 @@ STEPS:
 PATTERN TO COPY: <path + the 5–20 lines to imitate, pasted in>
 EXACT NAMES: <identifiers, signatures, types, strings to use verbatim>
 DONE WHEN: `<command>` prints `<expected output>`
-DO NOT: add features, rename things, change formatting elsewhere, install packages, commit
+DO NOT: add features, rename things, change formatting elsewhere, install packages, run ANY git command (no checkout, restore, reset, stash, clean, commit)
 REPLY WITH: files changed + the DONE WHEN output. Nothing else.
 ```
 
 - One clear outcome per run: one module, one file, one test file, or one repeated mechanical change. A feature that spans files = several briefs, with the shared interface (types, signatures, routes) decided by you and pasted into each.
 - You must be able to check the result with a command or a short diff read.
+- **DONE WHEN checks behaviour, never a bare count.** Run the thing (syntax check + execute, a self-test, an exact output line of a real run). A worker will pad a file to satisfy `grep -c` (observed). If a count is unavoidable, derive it from the code you pasted and still read the diff for filler lines.
+- **Visual work:** put the layout constraints in the brief as numbers (sizes, positions, safe areas in px) and require the script to print them, so the result can be checked without eyes.
 - **Failure ladder:** 1st failure → improve the brief (add the pattern, the exact names, the missing step) and rerun. 2nd failure → rerun on another coding model from `opencode models`. 3rd failure → `builder` with the brief and the failure output. Builder fails twice → you. You fail twice → BLOCKED in `HANDOFF.md` with the evidence; take the next independent task.
 
 ### Picking a free model

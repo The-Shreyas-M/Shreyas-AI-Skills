@@ -67,6 +67,7 @@ gh repo view <owner>/<repo> --json viewerPermission --jq .viewerPermission   # W
 
 ## Step 4: Commit (only if asked, or if there are changes and the user said "commit")
 
+0. Identity check: `git config user.name` must equal the resolved account's user.name. A mismatch (commits made outside this skill fall back to the global identity, which can be the other account) → redo Step 2 before committing, and tell the user which earlier commits carry the wrong author.
 1. `git status` and `git diff` (staged and unstaged). Recent style: `git log --oneline -5`.
 2. Stage specific files. No blind `git add -A`. Skip `.env`, keys, tokens, credentials, large binaries; warn if they are present and ask.
 3. Commit with the user's message, or a concise one matching the repo style. Follow any attribution rule from the session.
