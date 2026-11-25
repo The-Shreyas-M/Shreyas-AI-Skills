@@ -130,6 +130,7 @@ STEPS:
 PATTERN TO COPY: <path + the 5–20 lines to imitate, pasted in>
 EXACT NAMES: <identifiers, signatures, types, strings to use verbatim>
 DONE WHEN: `<command>` prints `<expected output>`
+ORDER: write the files first, then run DONE WHEN. Settle any edge case by the rule in this brief; do not deliberate.
 DO NOT: add features, rename things, change formatting elsewhere, install packages, run ANY git command (no checkout, restore, reset, stash, clean, commit)
 REPLY WITH: files changed + the DONE WHEN output. Nothing else.
 ```
