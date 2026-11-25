@@ -26,7 +26,10 @@ Each project keeps its confirmed account in `.gitcp.md` at the repo root (`git r
 # gitcp
 account: The-Shreyas-M
 confirmed: 2026-10-08
+mirrors: https://github.com/<other-owner>/<repo>   # optional; one URL per line, or comma-separated
 ```
+
+`mirrors:` lists **extra repos that must always get the same push** (for example a company repo plus the owner's own copy). Both must be reachable by the same account. Absent = one repo only.
 
 1. **File exists:** read `account:`. It must be a login from the table, else treat the file as invalid and go to 2.
    - Sanity check: if `origin`'s owner is the *other* account, the file may be wrong. Show the mismatch and ask which is right before doing anything. If the user picks differently, update the file.
@@ -34,6 +37,8 @@ confirmed: 2026-10-08
 3. **Write `.gitcp.md`** with the chosen login and today's date, and tell the user it was created. Keep it out of commits: append `.gitcp.md` to `.git/info/exclude` if not already there (local only; never stage it unless the user asks).
 
 Never skip the ask on first use in a project. Once the file exists, don't ask again.
+
+**Mirrors.** On first use, if `git remote get-url --push --all origin` already lists more than one URL, write every URL other than the fetch URL into `mirrors:` and tell the user. When the user says a project must be "maintained in both places", add the second repo to `mirrors:` (ask for its URL if not given; offer to create it under the resolved account, private, if it does not exist).
 
 Before acting, state it in one line: `Using college (The-Shreyas-M-College) from .gitcp.md`.
 
@@ -62,6 +67,7 @@ gh repo view <owner>/<repo> --json viewerPermission --jq .viewerPermission   # W
 - Remote owned by the **other** account: do not push. Ask whether to switch to that account or repoint the remote.
 - Remote owned by neither (org or fork) and permission is not write-level: stop and report.
 - No remote: go to **New repo** below.
+- Every URL in `mirrors:` gets the same write-level check. One that fails → stop before pushing anywhere and report which.
 
 (Windows PowerShell: `$env:GH_TOKEN = (gh auth token --user <login>)`, and `Remove-Item Env:GH_TOKEN` when done. In Bash, scope it per command, e.g. `GH_TOKEN=$(gh auth token --user X) git push`, rather than exporting for the whole session.)
 
@@ -79,6 +85,19 @@ gh repo view <owner>/<repo> --json viewerPermission --jq .viewerPermission   # W
 GH_TOKEN=$(gh auth token --user <login>) git push -u origin HEAD
 ```
 
+**With `mirrors:`** — make `origin` push to every repo, once (idempotent), then the same single push updates all of them:
+
+```bash
+F=$(git remote get-url origin)
+git remote get-url --push --all origin | grep -qxF "$F" || git remote set-url --add --push origin "$F"
+for m in <each mirror URL>; do git remote get-url --push --all origin | grep -qxF "$m" || git remote set-url --add --push origin "$m"; done
+GH_TOKEN=$(gh auth token --user <login>) git push -u origin HEAD
+# verify every copy, not just the last line git printed:
+L=$(git rev-parse HEAD); for u in $(git remote get-url --push --all origin); do r=$(GH_TOKEN=$(gh auth token --user <login>) git ls-remote "$u" HEAD | cut -c1-40); [ "$r" = "$L" ] && echo "ok $u" || echo "BEHIND $u"; done
+```
+
+Any `BEHIND` line → report it and push that URL on its own (`git push <url> HEAD`); a mirror that rejects as non-fast-forward has diverged — stop and ask, never force.
+
 Never force-push. If rejected as non-fast-forward, report it and ask (pull/rebase vs stop). Afterwards run `git status -sb` to confirm.
 
 ## New repo (no remote yet)
@@ -93,7 +112,7 @@ Commit first if there are no commits yet, then push with Step 5. Confirm before 
 
 ## Report
 
-End with: account used (label + login), repo URL, branch, short commit hash, and anything skipped. If `.gitcp.md` was newly created, say so.
+End with: account used (label + login), every repo URL pushed (one line each, with its ok/BEHIND result), branch, short commit hash, and anything skipped. If `.gitcp.md` was newly created, say so.
 
 ## Quick reference
 
