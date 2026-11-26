@@ -9,13 +9,13 @@ Proven recipe (3 Shorts from one 2-minute phone video). Pipeline: **record -> tr
 
 ## v2: best of both worlds (what changed)
 
-Ours = story-driven edit of the creator's own video (b-roll + face split screen, music, hook titles). Adopted from the professional **Devini Claude Video Clipper** (MIT, installed separately as skill `clip-video`):
+Ours = story-driven edit of the creator's own video (b-roll + face split screen, music, hook titles). Adopted from the professional **Devini Claude Video Clipper** (MIT, installed separately as `/ai-video:clip`):
 - `--check` boundary validator (warns on mid-sentence starts/ends and clips outside 15-60 s) and `scripts/find_phrase.py` for word-accurate times; custom `ranges` snap to whole words.
 - `references/picking-moments.md`: hook types, story shape, ending traps, scoring (credited, MIT).
 - `"face_crop": "auto"`: YuNet face detection (bundled model) frames the face; `face_headroom` tunes how wide.
 - Per-part zoom (`"zoom": "open|push|punch|none"`; default open on part 1, then alternating punch/push), quiet whooshes on the opening and each cut (`"sfx": "light|none"`, synthetic MIT sounds), `.srt` written next to the video, token merging ("$500", "100%"), knobs `accent`, `caption_y`, `caption_size`, `uppercase`, bundled Montserrat ExtraBold fallback font.
 
-**Which skill when:** creator's own scripted video + wants b-roll/music/titles -> this skill. A long video, podcast or someone's talk where the AI must FIND the best moments and auto-reframe faces -> `clip-video`. Orchestrated from any chat via `ai-video-studio`.
+**Which skill when:** creator's own scripted video + wants b-roll/music/titles -> this skill. A long video, podcast or someone's talk where the AI must FIND the best moments and auto-reframe faces -> `/ai-video:clip`. Orchestrated from any chat via `/ai-video:post`.
 
 ## 0. Setup (once) - all dependencies
 
@@ -97,7 +97,7 @@ Work files go in `_work_<name>/` (delete after).
 
 ## 8. Post (give the creator this)
 
-Shorts clipped from a main video must point to it: set **Related video** (Studio -> Details) to the main video, and put its link in the description. With `ai-video-studio`'s poster: `--related <main video>`, then `post.py related` for the Studio checklist.
+Shorts clipped from a main video must point to it: set **Related video** (Studio -> Details) to the main video, and put its link in the description. With `/ai-video:post`'s poster: `--related <main video>`, then `post.py related` for the Studio checklist.
 
 One Short per day after the main video. Title = the hook in plain words ("My first avatar failed"). Description: one sentence + `#shorts` + 3 tags + link. Pin a comment with the main video / product link. Save titles and descriptions for all videos in one md file next to the videos.
 

@@ -15,9 +15,9 @@ Token rule: do the heavy work inside ONE subagent/session started in this folder
 
 ## Edit job (what a subagent does)
 Input: video path(s) in `Raw Footage/`, desired output (long video / Shorts / Reels), style notes.
-1. Pick the engine (skills installed globally; entry point for the owner is `/ai-video`; read only the SKILL.md you need):
-   - Owner talking head + wants b-roll/screen footage, music, hook titles -> skill `shorts-from-main-video` (`make_short.py`, config JSON, use `--check` first).
-   - Long video or someone else's/podcast-style video, AI picks the best moments, auto face-reframe -> skill `clip-video` (`python run.py fetch|cut|edit` run inside its folder `~/.claude/skills/clip-video`).
+1. Pick the engine (skills installed globally; entry point for the owner is `/ai-video:start`; read only the SKILL.md you need):
+   - Owner talking head + wants b-roll/screen footage, music, hook titles -> `/ai-video:shorts` (`make_short.py`, config JSON, use `--check` first).
+   - Long video or someone else's/podcast-style video, AI picks the best moments, auto face-reframe -> `/ai-video:clip` (`python run.py fetch|cut|edit` run inside its folder `~/.claude/tools/video/clip-video`).
    - Plain trim / cut dead air / export -> ffmpeg directly (full build is on PATH).
 2. Transcribe with word timestamps (both skills do it). Fix mis-heard names via `fix_words`.
 3. **Boundary check** (`--check` / `cut --check`): every clip starts on a hook and ends on a payoff, 15-60 s for Shorts.

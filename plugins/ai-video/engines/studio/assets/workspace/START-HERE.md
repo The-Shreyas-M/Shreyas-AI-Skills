@@ -11,7 +11,7 @@ One-time setup for posting: see `posting/README.md` (create the YouTube login on
 Everything Claude must follow is in `CLAUDE.md`.
 
 ## If a chat does not know this folder
-Tell it: "Read `<your workspace>/CLAUDE.md` (the path is saved in `~/.claude/ai-video-editor.json`) and follow it", or install the skill `ai-video-studio` (`python install.py` from the ai-video-editor repo).
+Tell it: "Read `<your workspace>/CLAUDE.md` (the path is saved in `~/.claude/ai-video-editor.json`) and follow it", or install the `/ai-video:post` (`python install.py` from the ai-video-editor repo).
 
 ## Starting a helper session yourself
 `run-edit.ps1 "<brief>"` (Windows) runs Claude Code headless in this folder with the brief and prints only the final report.

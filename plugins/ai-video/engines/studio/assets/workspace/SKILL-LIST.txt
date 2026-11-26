@@ -1,6 +1,6 @@
 AI VIDEO EDITOR: SKILL CHEAT SHEET
 ==================================
-Remember only ONE thing: type  /ai-video  in Claude Code. It asks what you have and what you want, then uses the right tool below.
+Remember only ONE thing: type  /ai-video:start  in Claude Code. It asks what you have and what you want, then uses the right tool below.
 
 SKILLS (in ~/.claude/skills)
   ai-video                 The single entry point. Routes any video job to the right tool and keeps token use low.
@@ -9,7 +9,7 @@ SKILLS (in ~/.claude/skills)
   clip-video               Long video or YouTube link -> best moments as Shorts; AI picks moments, face-tracked reframing.
   youtube                  Titles, descriptions, tags, thumbnails, SEO, content strategy (third-party).
 
-MODULES (in ~/.claude/tools, read on demand by /ai-video)
+MODULES (in ~/.claude/tools, read on demand by /ai-video:start)
   claude-animation-skills  No footage needed: stick-figure explainer, 3D cartoon explainer, graph, map route, exploded view, minimal line art.
   brag-slim                Turns a project directory or website URL into a short launch video with music and share copy.
   HyperFrames              The HTML-to-MP4 renderer under the animation tools (npx hyperframes).
@@ -22,7 +22,7 @@ WORKSPACE (~/AI Video Editor)
   CLAUDE.md                the rules every Claude chat follows in this folder
 
 COMMON PROMPTS
-  /ai-video
+  /ai-video:start
   "Make 3 Shorts from Raw Footage/talk.mp4"
   "Clip this YouTube video: <link>"
   "Make a faceless 30-second explainer about <topic>, here is my voiceover"

@@ -1,16 +1,18 @@
 ---
-name: ai-video-studio
-description: The AI Video Editor workspace (folder "AI Video Editor": Raw Footage, References, Exports, posting queue). Use in ANY chat when the user wants videos edited (long video, Shorts, Reels) from files they dropped in that folder, wants to review and approve the result, and then wants it posted or scheduled on YouTube/Shorts/Instagram. Handles delegation to a subagent or a second Claude Code session in that folder to keep tokens low, and a safe approve-then-post pipeline. Also sets the workspace up from scratch on a new machine.
+name: post
+description: The AI Video Editor workspace (/ai-video:post) - folder with Raw Footage, References, Exports and the posting queue. Use when videos dropped there should be edited by a worker, reviewed and approved, then scheduled or posted to YouTube/Shorts/Instagram (official APIs). Also sets the workspace up on a new machine.
+argument-hint: "[what to post, where, when]"
 ---
 
-# AI Video Studio
+# /ai-video:post (the AI Video Editor workspace: review, approve, schedule, post)
 
 Workspace: its path is in `~/.claude/ai-video-editor.json` (key `workspace`; default `~/AI Video Editor`). Find it first; do not recreate if it exists. Everything the worker must follow is in that folder's **`CLAUDE.md`**; how the user uses it is in **`START-HERE.md`**; posting in **`posting/README.md`**.
 
 ## When invoked in a chat
-1. Locate the folder. If it is missing, set it up: `python <skill>/scripts/setup_workspace.py` (creates folders, rules, posting module, posting venv; re-runnable).
+1. Locate the folder. If it is missing, set it up: `python ~/.claude/tools/video/studio/scripts/setup_workspace.py` (creates folders, rules, posting module, posting venv; re-runnable).
 2. Identify the videos (the user says a file name or "whatever is in Raw Footage"). Do not read or transcribe them yourself.
 3. **Delegate the whole edit** (this is what keeps tokens low). Pick one:
+   - **Free model first**: write the brief to `.oc/<job>.md` in the workspace and run `opencode run -m opencode/beam-free` with the tested command (knowledge base `approach.md`). Fall back to the options below only if it fails twice.
    - Subagent: `Agent` tool, `general-purpose`, prompt = a brief of at most 10 lines: working folder, the file(s), desired output (e.g. "3 Shorts of 20-40 s + cleaned long cut"), style notes, "read CLAUDE.md in that folder and follow it; report at most 150 words: table file|length|title; do not post".
    - Separate session (user wants to watch/steer it): `start_session` with `cwd` = the folder, same brief.
    - Headless: `run-edit.ps1 "<brief>"` in the folder (runs `claude -p`).
@@ -27,8 +29,8 @@ Workspace: its path is in `~/.claude/ai-video-editor.json` (key `workspace`; def
 - Music: only free-for-commercial-use tracks with the source noted.
 - You cannot hear audio; frames and levels are checked, then the user listens.
 
-## Engines the worker uses (installed skills)
-`shorts-from-main-video` (creator's own talking head + b-roll, music, hook titles), `clip-video` (long video, AI picks moments, face auto-reframe), `youtube` (titles, SEO), ffmpeg for plain edits.
+## Engines the worker uses (in `~/.claude/tools/video/`)
+`/ai-video:shorts` (creator's own talking head + b-roll, music, hook titles), `/ai-video:clip` (long video, AI picks moments, face auto-reframe), `youtube` (titles, SEO), ffmpeg for plain edits.
 
 ## Dependencies
 Python 3.10+, ffmpeg full build with libass (on PATH or imageio-ffmpeg), the two engine skills above (+ their venv: `clip-video/install.py`), Claude Code CLI (`claude`) for headless runs, Google Cloud project with YouTube Data API v3 + OAuth Desktop client (owner creates), for Instagram: one Meta app + a token per account (`references/instagram-official-api.md`), no extra packages. Optional motion-graphics upgrade (not required): Remotion and HyperFrames, as in the third-party "AI Video Editing Setup Guide" (@decode.dani): add only if the owner wants animated graphics beyond captions/zooms.

@@ -1,3 +1,12 @@
+---
+name: faceless
+description: Videos with no footage (/ai-video:faceless) - explainer or graphic reels (stick figures, 3D cartoon, graphs, map routes, exploded views, minimal line art) from a script or the owner's voiceover, and ~20 s launch videos of a project or website.
+argument-hint: "[script, voiceover file, or project/site to promote]"
+---
+
+The rules of `/ai-video:start` apply (hook first, worker does the build, review gate, account gate). When done -> `/ai-video:post`.
+If `~/.claude/tools/video/` or the tools below are missing: `python "${CLAUDE_PLUGIN_ROOT}/engines/install_engines.py"`, then `python ~/.claude/tools/video/scripts/install_modules.py`.
+
 # Faceless / no-footage videos
 
 When the owner cannot record: give a script or a voiceover; Claude builds the video and queues it for review and posting.
@@ -11,7 +20,7 @@ When the owner cannot record: give a script or a voiceover; Claude builds the vi
 - Remotion is an optional alternative renderer (own licence terms for companies).
 
 ## Voiceover options (be honest with the owner)
-1. **Owner records a voiceover** (phone voice memo is fine; quiet room, 1 s pauses, short lines). Best option: it is the owner's real voice. Word timings: `skills/shorts-from-main-video/scripts/transcribe.py` (faster-whisper) or the kit's `words.py` (needs `--voice` models).
+1. **Owner records a voiceover** (phone voice memo is fine; quiet room, 1 s pauses, short lines). Best option: it is the owner's real voice. Word timings: `~/.claude/tools/video/shorts-from-main-video/scripts/transcribe.py` (faster-whisper) or the kit's `words.py` (needs `--voice` models).
 2. **Owner's cloned voice**: made locally with Voicebox from the owner's OWN sample (`scripts/voicebox_tts.py`, see docs/VOICE.md). Claude never clones anyone else and always discloses synthetic voices.
 3. **Free built-in synthetic voice** (Kokoro, preset voices, not a clone): `bash kit/setup.sh --voice` (about 1 GB of models, optional). Fine for faceless explainers; say it is synthetic where platforms require disclosure.
 
@@ -20,4 +29,4 @@ When the owner cannot record: give a script or a voiceover; Claude builds the vi
 - Rendering uses Playwright's Chromium (downloaded by setup) and HyperFrames via npx.
 
 ## Flow
-Script (or voiceover) -> choose engine -> subagent builds in `work/<project>/` -> mp4 into `Exports/<project>/` -> frames checked -> owner approves -> choose accounts -> schedule (see `ai-video`). Add on-screen disclosure or description note "AI-generated animation / synthetic voice" when relevant. No fabricated facts or testimonials.
+Script (or voiceover) -> choose engine -> subagent builds in `work/<project>/` -> mp4 into `Exports/<project>/` -> frames checked -> owner approves -> choose accounts -> schedule (see `/ai-video:start`). Add on-screen disclosure or description note "AI-generated animation / synthetic voice" when relevant. No fabricated facts or testimonials.
