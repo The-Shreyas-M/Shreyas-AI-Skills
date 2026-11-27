@@ -9,14 +9,13 @@ The user has two GitHub accounts on this machine. Each project must be pushed by
 
 ## Accounts
 
-| Key | Label    | gh login                 | user.name                | user.email                                         |
-|-----|----------|--------------------------|--------------------------|----------------------------------------------------|
-| `p` | personal | `The-Shreyas-M`          | `The-Shreyas-M`          | `179123411+The-Shreyas-M@users.noreply.github.com` |
-| `c` | college  | `The-Shreyas-M-College`  | `The-Shreyas-M-College`  | `308621427+The-Shreyas-M-College@users.noreply.github.com` |
+The accounts live in a **local file, never in this skill or any repo**: `~/.claude/gitcp-accounts.md`. Read it first. It holds a table (key, label, gh login, user.name, user.email) and a list of **private terms**. If it is missing, ask the user for each account's gh login (`gh auth status` lists them), get the noreply email with `gh api users/<login> --jq '"\(.id)+\(.login)@users.noreply.github.com"'`, and write the file.
+
+Below, `<login>`, `<user.name>`, `<user.email>` and the labels come from that file.
 
 Token for an account: `gh auth token --user <login>`. If that fails, the account is not logged in: tell the user to run `gh auth login` and stop.
 
-The global git identity is the college account, so **never rely on global `user.*`**; always set the repo-local identity.
+The global git identity may belong to the other account, so **never rely on global `user.*`**; always set the repo-local identity.
 
 ## Step 1: Resolve the account via `.gitcp.md` (project root)
 
@@ -33,14 +32,14 @@ mirrors: https://github.com/<other-owner>/<repo>   # optional; one URL per line,
 
 1. **File exists:** read `account:`. It must be a login from the table, else treat the file as invalid and go to 2.
    - Sanity check: if `origin`'s owner is the *other* account, the file may be wrong. Show the mismatch and ask which is right before doing anything. If the user picks differently, update the file.
-2. **File missing (or invalid): always ask once**, even if the remote owner looks obvious. Use AskUserQuestion with options `personal (The-Shreyas-M)` and `college (The-Shreyas-M-College)`. Say what you saw (remote owner, no remote, etc.) and mark the matching account "(Recommended)" when the remote owner is one of them.
+2. **File missing (or invalid): always ask once**, even if the remote owner looks obvious. Use AskUserQuestion with one option per account in the accounts file, labelled `<label> (<login>)`. Say what you saw (remote owner, no remote, etc.) and mark the matching account "(Recommended)" when the remote owner is one of them.
 3. **Write `.gitcp.md`** with the chosen login and today's date, and tell the user it was created. Keep it out of commits: append `.gitcp.md` to `.git/info/exclude` if not already there (local only; never stage it unless the user asks).
 
 Never skip the ask on first use in a project. Once the file exists, don't ask again.
 
 **Mirrors.** On first use, if `git remote get-url --push --all origin` already lists more than one URL, write every URL other than the fetch URL into `mirrors:` and tell the user. When the user says a project must be "maintained in both places", add the second repo to `mirrors:` (ask for its URL if not given; offer to create it under the resolved account, private, if it does not exist).
 
-Before acting, state it in one line: `Using college (The-Shreyas-M-College) from .gitcp.md`.
+Before acting, state it in one line: `Using <label> (<login>) from .gitcp.md`.
 
 ## Step 2: Configure the repo (local only)
 
@@ -78,6 +77,19 @@ gh repo view <owner>/<repo> --json viewerPermission --jq .viewerPermission   # W
 2. Stage specific files. No blind `git add -A`. Skip `.env`, keys, tokens, credentials, large binaries; warn if they are present and ask.
 3. Commit with the user's message, or a concise one matching the repo style. Follow any attribution rule from the session.
 4. If a pre-commit hook fails, fix the cause and make a **new** commit. Never `--no-verify`, never amend unless asked.
+
+## Step 4b: Privacy check (every push to a PUBLIC repo, and before making a repo public)
+
+Check visibility: `gh repo view <owner>/<repo> --json visibility --jq .visibility` (a new repo: the visibility the user chose). If it is PUBLIC, scan what is about to be published before pushing:
+
+```bash
+T=$(sed -n '/^```$/,/^```$/p' ~/.claude/gitcp-accounts.md | grep -v '^```' | grep -v '^$' | paste -sd'|')
+git diff --cached --name-only; git log --oneline @{u}.. 2>/dev/null   # what goes out
+git diff @{u}..HEAD 2>/dev/null | grep -n -i -E "^\+.*($T)"; git diff --cached | grep -n -i -E "^\+.*($T)"
+git grep -n -I -i -E "($T)|[A-Za-z]:\\Users\\|/home/[a-z]+/|/Users/[a-z]+/" -- . ':!*.lock' | head -20
+```
+
+Any hit → do not push. Show the lines, propose the fix (remove the line, replace a personal fact with a project fact, move it to a git-ignored file), and push only after the user approves the fix or explicitly says the line is fine. Also refuse a public push that adds `.env`, keys or tokens. Private repos skip this step.
 
 ## Step 5: Push (only if asked)
 

@@ -32,6 +32,14 @@ So: **opencode writes, you brief and verify, Claude subagents are the exception.
 - **When an agent pays off.** A Claude subagent costs 60k+ tokens just to start, so it saves tokens only when the job would otherwise put more than about that much into your own context (which you then re-read on every later turn) *and* a free model cannot do it. Everything smaller you do yourself: send command output to a file and grep it, read only the lines you need. Writing and long reading go to `opencode run`.
 - **A Claude subagent for a Claude-only tool** (for example reading pages in the owner's logged-in browser) is **haiku**, briefed to save what it reads into files under `.oc/` and reply in ≤150 words. A free model then reads those files.
 
+## Public repos: project facts only
+
+Everything committed here may become public. Repo files (CLAUDE.md, HANDOFF, TODO, SPEC, DECISIONS, TOOLCHAIN, SKILL-FEEDBACK, code comments) hold **facts about this project only**:
+- Never copy anything from the owner's knowledge base into the repo: other projects, hardware owned, accounts and which is which, machine paths (`C:\Users\...`, `/home/...`), emails, phone numbers, employer or client names, preferences. Use it to decide; write only the decision ("use ESP32-S3", not "owner has 10 ESP32-S3 boards").
+- No local absolute paths in docs or TOOLCHAIN rows: write `~/esp/esp-idf`, `<IDF_PATH>`, or the command.
+- Secrets never, in any repo.
+- Before the first push to a public repo, or before making a repo public, run the privacy check in the `gitcp` skill (Step 4b). Any hit is a CHECKPOINT for the owner.
+
 ## Shared knowledge base (local sessions)
 
 If `~/.claude/workspace-registry.txt` exists, it points to the owner's private workspace repo: `knowledge/INDEX.md` (owner preferences, approach, this machine, hardware owned, other projects, lessons) and `plugins/shreyas-workspace-replicate/registry/tools.yaml` (every installed tool). Rules:

@@ -38,7 +38,7 @@ Verify: `npx skills list`.
 
 ## Configure your accounts
 
-Edit the accounts table at the top of `SKILL.md` with each account's `gh` login, name and `ID+login@users.noreply.github.com` email (find the ID with `gh api users/<login> --jq .id`). Restart your agent afterwards.
+Your accounts are kept outside the skill, in `~/.claude/gitcp-accounts.md` (never committed). The skill creates it on first use by asking for each account's `gh` login; you can also write it yourself: a table of key, label, gh login, user.name and `ID+login@users.noreply.github.com` email (ID: `gh api users/<login> --jq .id`), plus a fenced list of **private terms** (your Windows user name, personal email, client names...). Before any push to a public repo, gitcp scans the outgoing changes for those terms and for home-folder paths and stops if it finds any.
 
 ## Prerequisite: both accounts authenticated in GitHub CLI
 

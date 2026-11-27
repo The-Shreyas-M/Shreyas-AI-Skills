@@ -32,6 +32,8 @@
 
 ## Confidential
 
+Repo files hold project facts only; never copy owner facts from the knowledge base in (WORKFLOW → "Public repos: project facts only"). Public pushes go through the gitcp privacy check.
+
 {{"Personal project — free models allowed for tier-0 tasks." OR "Client/company code — never send to free models (opencode free tier, omniroute)."}}
 Secrets live in {{where}}, never in the repo.
 
